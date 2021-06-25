@@ -1,3 +1,4 @@
+#pragma once
 /**
  * kalu - Copyright (C) 2012-2018 Olivier Brunel
  *
@@ -134,7 +135,7 @@ typedef enum {
 } tpl_t;
 
 /* template names in config (prefixed w/ "template-") */
-const gchar *tpl_names[_NB_TPL];
+extern const gchar *tpl_names[_NB_TPL];
 
 typedef enum {
     FLD_TITLE,
@@ -144,7 +145,7 @@ typedef enum {
 } fld_t;
 
 /* field names in config */
-const gchar *fld_names[_NB_FLD];
+extern const gchar *fld_names[_NB_FLD];
 
 typedef enum {
     TPL_SCE_UNDEFINED = 0,
@@ -156,7 +157,7 @@ typedef enum {
 } tpl_sce_t;
 
 /* source names in config */
-const gchar *tpl_sce_names[_NB_TPL_SCE];
+extern const gchar *tpl_sce_names[_NB_TPL_SCE];
 
 struct field {
     const char *def;

@@ -2733,7 +2733,7 @@ dl_progress_cb (const gchar *filename, off_t xfered, off_t total)
 }
 
 static void
-question_cb (alpm_question_t *question)
+question_cb (void *ctx, alpm_question_t *question)
 {
     alpm_list_t *i, *l;
 
@@ -2843,7 +2843,7 @@ question_cb (alpm_question_t *question)
 }
 
 static void
-log_cb (alpm_loglevel_t level, const char *fmt, va_list args)
+log_cb (void *ctx, alpm_loglevel_t level, const char *fmt, va_list args)
 {
     gchar *s;
 

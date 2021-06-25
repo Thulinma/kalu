@@ -453,7 +453,7 @@ error:
 }
 
 static void
-log_cb (alpm_loglevel_t level, const char *fmt, va_list args)
+log_cb (void *ctx, alpm_loglevel_t level, const char *fmt, va_list args)
 {
     gchar *s;
     gsize l;
@@ -539,7 +539,7 @@ kalu_alpm_load (kalu_simul_t    *simulation,
     }
 
     /* set arch & some options (what to ignore during update) */
-    alpm_option_set_arch (alpm->handle, pac_conf->arch);
+    alpm_option_add_architecture (alpm->handle, pac_conf->arch);
     alpm_option_set_ignorepkgs (alpm->handle, pac_conf->ignorepkgs);
     alpm_option_set_ignoregroups (alpm->handle, pac_conf->ignoregroups);
     alpm_option_set_default_siglevel (alpm->handle, pac_conf->siglevel);
@@ -560,15 +560,15 @@ kalu_alpm_load (kalu_simul_t    *simulation,
     if (simulation)
     {
         alpm->simulation = simulation;
-        alpm_option_set_dlcb (alpm->handle, simulation->dl_progress_cb);
-        alpm_option_set_questioncb (alpm->handle, simulation->question_cb);
-        alpm_option_set_logcb (alpm->handle, simulation->log_cb);
+        alpm_option_set_dlcb (alpm->handle, simulation->dl_progress_cb, NULL);
+        alpm_option_set_questioncb (alpm->handle, simulation->question_cb, NULL);
+        alpm_option_set_logcb (alpm->handle, simulation->log_cb, NULL);
         simulation->pac_conf = pac_conf;
     }
     else
 #endif
     if (config->is_debug > 1)
-        alpm_option_set_logcb (alpm->handle, log_cb);
+        alpm_option_set_logcb (alpm->handle, log_cb, NULL);
 
     /* now we need to add dbs */
     alpm_list_t *i;
@@ -672,31 +672,31 @@ kalu_alpm_syncdbs (GString **_synced_dbs, GError **error)
     if (alpm->simulation)
         alpm->simulation->on_sync_dbs (NULL, (gint) alpm_list_count (sync_dbs));
 #endif
-    FOR_LIST (i, sync_dbs)
-    {
-        alpm_db_t *db = i->data;
 
 #ifndef DISABLE_UPDATER
         if (alpm->simulation)
-            alpm->simulation->on_sync_db_start (NULL, alpm_db_get_name (db));
+            alpm->simulation->on_sync_db_start (NULL, "all");
 #endif
-        ret = alpm_db_update (0, db);
+        ret = alpm_db_update (alpm->handle, sync_dbs, FALSE);
         if (ret < 0)
         {
             g_set_error (error, KALU_ERROR, 1,
-                    _("Failed to update %s: %s"),
-                    alpm_db_get_name (db),
+                    _("Failed to update databases: %s"),
                     alpm_strerror (alpm_errno (alpm->handle)));
             return FALSE;
         }
         else if (ret == 1)
         {
-            debug ("%s is up to date", alpm_db_get_name (db));
+            debug ("databases are up to date");
         }
         else
         {
             if (_synced_dbs)
             {
+              debug ("databases were updated");
+              FOR_LIST (i, sync_dbs)
+              {
+                alpm_db_t *db = i->data;
                 GString *str = *_synced_dbs;
                 const char *dbname = alpm_db_get_name (db);
                 size_t j;
@@ -713,8 +713,8 @@ kalu_alpm_syncdbs (GString **_synced_dbs, GError **error)
                     g_string_append (str, dbname);
                     g_string_append_c (str, '\0');
                 }
+              }
             }
-            debug ("%s was updated", alpm_db_get_name (db));
         }
 #ifndef DISABLE_UPDATER
         if (alpm->simulation)
@@ -730,7 +730,6 @@ kalu_alpm_syncdbs (GString **_synced_dbs, GError **error)
                     (ret < 0) ? SYNC_FAILURE : (ret == 1) ? SYNC_NOT_NEEDED : SYNC_SUCCESS);
         }
 #endif
-    }
 
     return TRUE;
 }

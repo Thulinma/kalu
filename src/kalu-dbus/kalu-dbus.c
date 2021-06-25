@@ -246,7 +246,7 @@ make_optstring (alpm_depend_t *optdep)
 
 /* callback to handle messages/notifications from libalpm transactions */
 static void
-event_cb (alpm_event_t *event)
+event_cb (void *ctx, alpm_event_t *event)
 {
     if (event->type == ALPM_EVENT_PACKAGE_OPERATION_DONE)
     {
@@ -343,36 +343,6 @@ event_cb (alpm_event_t *event)
                 alpm_pkg_get_name (e->pkg),
                 alpm_dep_compute_string (e->optdep));
     }
-    else if (event->type == ALPM_EVENT_PKGDOWNLOAD_START)
-    {
-        emit_signal ("EventPkgdownloadStart", "s",
-                ((alpm_event_pkgdownload_t *) event)->file);
-    }
-    else if (event->type == ALPM_EVENT_PKGDOWNLOAD_DONE)
-    {
-        emit_signal ("EventPkgdownloadDone", "s",
-                ((alpm_event_pkgdownload_t *) event)->file);
-    }
-    else if (event->type == ALPM_EVENT_PKGDOWNLOAD_FAILED)
-    {
-        emit_signal ("EventPkgdownloadFailed", "s",
-                ((alpm_event_pkgdownload_t *) event)->file);
-    }
-    else if (event->type == ALPM_EVENT_RETRIEVE_START)
-    {
-        /* Retrieving packages */
-        emit_signal ("Event", "i", EVENT_RETRIEVING_PKGS);
-    }
-    else if (event->type == ALPM_EVENT_RETRIEVE_DONE)
-    {
-        /* Retrieving packages */
-        emit_signal ("Event", "i", EVENT_RETRIEVING_PKGS_DONE);
-    }
-    else if (event->type == ALPM_EVENT_RETRIEVE_FAILED)
-    {
-        /* Retrieving packages */
-        emit_signal ("Event", "i", EVENT_RETRIEVING_PKGS_FAILED);
-    }
     else if (event->type == ALPM_EVENT_TRANSACTION_START)
     {
         emit_signal ("Event", "i", EVENT_TRANSACTION);
@@ -442,7 +412,7 @@ event_cb (alpm_event_t *event)
 
 /* callback to handle display of transaction progress */
 static void
-progress_cb (alpm_progress_t _event, const char *_pkgname, int percent,
+progress_cb (void *ctx, alpm_progress_t _event, const char *_pkgname, int percent,
              size_t _howmany, size_t _current)
 {
     guint howmany = (guint) _howmany;
@@ -487,35 +457,24 @@ progress_cb (alpm_progress_t _event, const char *_pkgname, int percent,
     emit_signal ("Progress", "isiuu", event, pkgname, percent, howmany, current);
 }
 
-/* callback to handle receipt of total download value */
 static void
-dl_total_cb (off_t _total)
+dl_progress_cb (void *ctx, const char *filename, alpm_download_event_type_t event, void *data)
 {
-    guint total = (guint) _total;
-    emit_signal ("TotalDownload", "u", total);
-}
-
-/* callback to handle display of download progress */
-static void
-dl_progress_cb (const char *filename, off_t _xfered, off_t _total)
-{
-    guint xfered = (guint) _xfered;
-    guint total  = (guint) _total;
-    if (_xfered == 0)
-    {
-        /* non-download event: ignoring */
-        if (_total == 0)
-            return;
-        /* download initialized; set 0 since we're using unsigned int */
-        else if (_total < 0)
-            _total = 0;
-    }
-    emit_signal ("Downloading", "suu", filename, xfered, total);
+	if(event == ALPM_DOWNLOAD_INIT) {
+                emit_signal ("EventPkgdownloadStart", "s", filename);
+	} else if(event == ALPM_DOWNLOAD_PROGRESS) {
+                alpm_download_event_progress_t* eData = (alpm_download_event_progress_t*)data;
+                emit_signal ("Downloading", "suu", filename, eData->downloaded, eData->total);
+	} else if(event == ALPM_DOWNLOAD_RETRY) {
+                emit_signal ("EventPkgdownloadFailed", "s", filename);
+	} else if(event == ALPM_DOWNLOAD_COMPLETED) {
+                emit_signal ("EventPkgdownloadDone", "s", filename);
+	}
 }
 
 /* callback to handle notifications from the library */
 static void
-log_cb (alpm_loglevel_t level, const char *fmt, va_list args)
+log_cb (void *ctx, alpm_loglevel_t level, const char *fmt, va_list args)
 {
     if (!fmt || *fmt == '\0')
     {
@@ -534,7 +493,7 @@ log_cb (alpm_loglevel_t level, const char *fmt, va_list args)
 
 /* callback to handle questions from libalpm */
 static void
-question_cb (alpm_question_t *question)
+question_cb (void *ctx, alpm_question_t *question)
 {
     GVariantBuilder *builder;
     alpm_list_t *i;
@@ -844,12 +803,11 @@ init_alpm (GVariant *parameters)
     }
 
     /* set callbacks, that we'll turn into signals */
-    alpm_option_set_logcb (handle, log_cb);
-    alpm_option_set_dlcb (handle, dl_progress_cb);
-    alpm_option_set_eventcb (handle, event_cb);
-    alpm_option_set_questioncb (handle, question_cb);
-    alpm_option_set_progresscb (handle, progress_cb);
-    alpm_option_set_totaldlcb (handle, dl_total_cb);
+    alpm_option_set_logcb (handle, log_cb, NULL);
+    alpm_option_set_dlcb (handle, dl_progress_cb, NULL);
+    alpm_option_set_eventcb (handle, event_cb, NULL);
+    alpm_option_set_questioncb (handle, question_cb, NULL);
+    alpm_option_set_progresscb (handle, progress_cb, NULL);
 
     ret = alpm_option_set_logfile (handle, logfile);
     if (ret != 0)
@@ -912,7 +870,7 @@ init_alpm (GVariant *parameters)
 
     /* following options can't really fail, unless handle is wrong but
      * that would have caused lots of failures before reacing here */
-    alpm_option_set_arch (handle, arch);
+    alpm_option_add_architecture (handle, arch);
     alpm_option_set_checkspace (handle, checkspace);
     alpm_option_set_usesyslog (handle, usesyslog);
 
@@ -1031,7 +989,7 @@ add_db (GVariant *parameters)
     g_variant_iter_free (servers_iter);
 
     alpm_list_t *i;
-    const char *arch = alpm_option_get_arch (handle);
+    const char *arch = alpm_option_get_architectures (handle)->data;
     FOR_LIST (i, servers)
     {
         char *value = i->data;
@@ -1096,9 +1054,7 @@ static gboolean
 sync_dbs (GVariant *parameters)
 {
     alpm_list_t        *syncdbs   = NULL;
-    alpm_list_t        *i;
     int                 ret;
-    sync_db_results_t   result;
 
     g_variant_unref (parameters);
 
@@ -1111,30 +1067,16 @@ sync_dbs (GVariant *parameters)
 
     syncdbs = alpm_get_syncdbs (handle);
     emit_signal ("SyncDbs", "i", alpm_list_count (syncdbs));
-    FOR_LIST (i, syncdbs)
+    ret = alpm_db_update (handle, syncdbs, FALSE);
+    if (ret < 0)
     {
-        alpm_db_t *db = i->data;
-        emit_signal ("SyncDbStart", "s", alpm_db_get_name (db));
-        ret = alpm_db_update (0, db);
-        if (ret < 0)
-        {
-            result = SYNC_FAILURE;
-            alpm_logaction (handle, PREFIX,
-                    "Failed to synchronize database %s: %s\n",
-                    alpm_db_get_name (db),
-                    alpm_strerror (alpm_errno (handle)));
-        }
-        else if (ret == 1)
-        {
-            result = SYNC_NOT_NEEDED;
-        }
-        else
-        {
-            result = SYNC_SUCCESS;
-            alpm_logaction (handle, PREFIX, "synchronized database %s\n",
-                    alpm_db_get_name (db));
-        }
-        emit_signal ("SyncDbEnd", "i", result);
+        alpm_logaction (handle, PREFIX,
+                "Failed to synchronize databases: %s\n",
+                alpm_strerror (alpm_errno (handle)));
+    }
+    else if (ret != 1)
+    {
+        alpm_logaction (handle, PREFIX, "synchronized databases\n");
     }
 
     method_finished ("SyncDbs");
