@@ -96,7 +96,8 @@ gboolean    kalu_updater_init_alpm          (KaluUpdater         *kupdater,
                                              GCancellable        *cancellable,
                                              KaluMethodCallback   callback,
                                              gpointer             data,
-                                             GError             **error);
+                                             GError             **error,
+                                             int paradowns);
 
 
 /* AddDb */

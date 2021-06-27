@@ -244,6 +244,7 @@ parse_pacman_conf (const char       *file,
         (*pacconf)->siglevel = ALPM_SIG_USE_DEFAULT;
     }
     pacman_config_t *pac_conf = *pacconf;
+    pac_conf->paradowns = 5;
     /* the db/repo we're currently parsing, if any */
     static database_t *cur_db = NULL;
 
@@ -487,6 +488,9 @@ parse_pacman_conf (const char       *file,
                         goto cleanup;
                     }
                     FREELIST (values);
+                } else if(streq(key, "ParallelDownloads")) {
+                        pac_conf->paradowns = atoi(value);
+                        debug ("config: paradowns: %d", pac_conf->paradowns);
                 }
                 /* we silently ignore "unrecognized" options, since we don't
                  * parse all of pacman's options anyways... */

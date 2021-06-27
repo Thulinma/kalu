@@ -1386,7 +1386,8 @@ gboolean    kalu_updater_init_alpm          (KaluUpdater         *kupdater,
                                              GCancellable        *cancellable,
                                              KaluMethodCallback   callback,
                                              gpointer             data,
-                                             GError             **error)
+                                             GError             **error,
+                                             int paradowns)
 {
     GVariant *variant;
     check ("InitAlpm");
@@ -1437,7 +1438,7 @@ gboolean    kalu_updater_init_alpm          (KaluUpdater         *kupdater,
 
     variant = g_dbus_proxy_call_sync (G_DBUS_PROXY (kupdater),
             "InitAlpm",
-            g_variant_new ("(ssssasasisbbasasasas)",
+            g_variant_new ("(ssssasasisbbasasasasi)",
                 rootdir,
                 dbpath,
                 logfile,
@@ -1451,7 +1452,8 @@ gboolean    kalu_updater_init_alpm          (KaluUpdater         *kupdater,
                 ignorepkgs_builder,
                 ignoregroups_builder,
                 noupgrades_builder,
-                noextracts_builder),
+                noextracts_builder,
+                paradowns),
             G_DBUS_CALL_FLAGS_NONE,
             -1,
             cancellable,

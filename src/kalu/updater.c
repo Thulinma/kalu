@@ -1458,35 +1458,34 @@ on_download (KaluUpdater *kupdater _UNUSED_, const gchar *filename,
                 double      pctg     = (total > 0) ? (double) xfered / total : 0;
                 pkg_iter_t *pkg_iter = updater->step_data;
 
-                if (G_UNLIKELY (g_strcmp0 (filename, pkg_iter->filename) != 0))
-                {
-                    debug ("on_download: invalid iter, expected '%s', got '%s'",
-                            filename, pkg_iter->filename);
-                    return;
+                if (g_strcmp0 (filename, pkg_iter->filename) != 0){
+                  gchar *s, *pkg;
+                  s = pkg = strdup (filename);
+                  for (int i = 0; i < 3; ++i)
+                  {
+                      if (NULL == (s = strrchr (pkg, '-')))
+                      {
+                          free (pkg);
+                          debug ("on_download: invalid filename: %s", filename);
+                          return;
+                      }
+                      *s = '\0';
+                  }
+
+                    /* locate pkg in tree */
+                    pkg_iter->iter = get_iter_for_pkg(pkg);
+                    if (pkg_iter->iter == NULL){
+                        free (pkg);
+                        debug ("on_download: unable to find iter for %s", filename);
+                        return;
+                    }
+                    if (pkg_iter->filename != NULL){free(pkg_iter->filename);}
+                    pkg_iter->filename = strdup(filename);
+                    free (pkg);
                 }
+                debug ("on_download: %s; %lu / %lu", filename, (unsigned long)xfered, (unsigned long)total);
 
                 /* pkg progress */
-
-                /* story goes like this: in UCOL_DL_SIZE we have the download
-                 * size as reported by ALPM. This might be the size of the file
-                 * to download, or the combined sizes of all deltas.
-                 * UCOL_TOT_DL_SIZE is the size of previous downloads, i.e.
-                 * previous deltas for that package, or when resuming from
-                 * another mirror (see below).
-                 *
-                 * So, we use xfered & total as UCOL_CUR_{XFRD,DL}_SIZE to keep
-                 * track of the sizes for the current download (file). However,
-                 * in case of a download failure, ALPM doesn't trigger the
-                 * pkgdownload_failed event, but instead moves on to (resumes
-                 * from) the next mirror. (Only when out of mirrors does the
-                 * pkgdownload_failed occurs.)
-                 *
-                 * So, here the xfered size might be reset (and the total size
-                 * shrunken) as we're (silectly) resuming the download (from
-                 * another mirror), and because we try to keep track of how much
-                 * was downloaded so we can tell when the download is "fully"
-                 * done (as in, all deltas), we need to keep track.
-                 */
                 {
                     guint old_xfered, old_total, tot_size;
 
@@ -1518,9 +1517,8 @@ on_download (KaluUpdater *kupdater _UNUSED_, const gchar *filename,
                 if (updater->total_dl > 0)
                 {
                     /* download progress */
-                    pctg = (double) (updater->step_done + xfered) / updater->total_dl;
-                    gtk_progress_bar_set_fraction (
-                            GTK_PROGRESS_BAR (updater->pbar_action), pctg);
+                    pctg = (double) xfered / total;
+                    gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR (updater->pbar_action), pctg);
 
                     /* global progress */
                     pctg = updater->pctg_done + (pctg * updater->pctg_download);
@@ -2352,7 +2350,9 @@ updater_method_cb (KaluUpdater *kupdater, const gchar *errmsg,
                 NULL,
                 (KaluMethodCallback) updater_init_alpm_cb,
                 (gpointer) pac_conf,
-                &error))
+                &error,
+                pac_conf->paradowns
+                ))
     {
         add_log (LOGTYPE_UNIMPORTANT, _(" failed\n"));
         _show_error (_("Failed to initialize ALPM library"), "%s",
@@ -2723,7 +2723,7 @@ btn_rerun_cb (GtkButton *button _UNUSED_, gpointer data _UNUSED_)
 }
 
 static void
-dl_progress_cb (const gchar *filename, off_t xfered, off_t total)
+dl_progress_cb (void * ctx, const gchar *filename, off_t xfered, off_t total)
 {
     on_download (NULL, filename, (guint) xfered, (guint) total);
     /* because in simulation the sync-ing dbs is actually done in the main

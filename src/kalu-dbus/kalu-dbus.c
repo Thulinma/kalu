@@ -740,6 +740,7 @@ init_alpm (GVariant *parameters)
     GVariantIter *cachedirs_iter;
     alpm_list_t  *cachedirs = NULL;
     int           siglevel;
+    int           paradowns;
     const gchar  *arch;
     gboolean      checkspace;
     gboolean      usesyslog;
@@ -764,7 +765,7 @@ init_alpm (GVariant *parameters)
     state = STATE_INIT;
 
     debug ("getting alpm params");
-    g_variant_get (parameters, "(ssssasasisbbasasasas)",
+    g_variant_get (parameters, "(ssssasasisbbasasasasi)",
         &rootdir,
         &dbpath,
         &logfile,
@@ -778,7 +779,8 @@ init_alpm (GVariant *parameters)
         &ignorepkgs_iter,
         &ignoregroups_iter,
         &noupgrades_iter,
-        &noextracts_iter);
+        &noextracts_iter,
+        &paradowns);
     g_variant_unref (parameters);
 
     debug ("init alpm");
@@ -869,10 +871,11 @@ init_alpm (GVariant *parameters)
     }
 
     /* following options can't really fail, unless handle is wrong but
-     * that would have caused lots of failures before reacing here */
+     * that would have caused lots of failures before reaching here */
     alpm_option_add_architecture (handle, arch);
     alpm_option_set_checkspace (handle, checkspace);
     alpm_option_set_usesyslog (handle, usesyslog);
+    alpm_option_set_parallel_downloads(handle, paradowns);
 
     while (g_variant_iter_loop (ignorepkgs_iter, "s", &s))
     {

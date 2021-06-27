@@ -18,6 +18,7 @@
       <arg type='as' name='ignoregroups' direction='in'/>
       <arg type='as' name='noupgrades'   direction='in'/>
       <arg type='as' name='noextracts'   direction='in'/>
+      <arg type='i'  name='paradowns'    direction='in'/>
     </method>
     <method name='AddDb'>
       <arg type='s'  name='name'         direction='in'/>
