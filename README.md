@@ -1,3 +1,12 @@
+The original author of kalu hasn't updated it for several years.
+In the meanwhile, pacman has received some updates that make it incompatible.
+To maintain kalu into the future, I created this fork of the original.
+It integrates some code that was made by various others that patched up broken functionality as updates happened, as well as some of my own patches to add support for pacman 6.0.
+I intend to maintain this fork for the foreseeable future, as-needed (e.g. whenever anything breaks).
+
+___________________
+
+
 # kalu: Keeping Arch Linux Up-to-date
 
 kalu (which could stand for "Keeping Arch Linux Up-to-date") is a small
