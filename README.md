@@ -1,8 +1,19 @@
+# About this fork
+
 The original author of kalu hasn't updated it for several years.
 In the meanwhile, pacman has received some updates that make it incompatible.
-To maintain kalu into the future, I created this fork of the original.
-It integrates some code that was made by various others that patched up broken functionality as updates happened, as well as some of my own patches to add support for pacman 6.0.
-I intend to maintain this fork for the foreseeable future, as-needed (e.g. whenever anything breaks).
+To maintain kalu into the future, Thulinma created this fork of the original. It contains:
+
+- The original author's untested [rm-delta](https://github.com/jjk-jacky/kalu/tree/rm-delta) branch, which removed delta support from the codebase
+- The original author's [next](https://github.com/jjk-jacky/kalu/tree/next) branch, which included a Dutch translation and updates to use StatusNotifier 1.00
+- Support for pacman 6.0: a collaborative effort between [jghodd](https://github.com/jghodd) and Thulinma.
+- Support for newer versions of GCC (trivial patch, by Thulinma but several others had made near-identical patches before)
+- Support for parallel downloads in the built-in updater (by Thulinma)
+
+I intend to maintain this fork for the foreseeable future, as-needed (e.g. whenever anything breaks, or some important new feature is needed/missing). Should the original author return, the fork will most likely be abandoned in favour of the original.
+For now, none of the copyright notices have been updated. This may still be done at a later date.
+
+The rest of this README is verbatim the original README.
 
 ___________________
 
