@@ -770,7 +770,7 @@ on_event_pkgdownload_start (KaluUpdater *kupdater _UNUSED_, const gchar *filenam
 
 static void
 on_event_pkgdownload_done (KaluUpdater *kupdater _UNUSED_,
-                           const gchar *file _UNUSED_)
+                           const gchar *filename)
 
 {
     if (G_UNLIKELY (updater->step != STEP_DOWNLOADING))
@@ -782,6 +782,33 @@ on_event_pkgdownload_done (KaluUpdater *kupdater _UNUSED_,
     pkg_iter_t *pkg_iter = updater->step_data;
     guint dl_size, cur_size, tot_size;
     gboolean dl_done;
+
+
+    if (g_strcmp0 (filename, pkg_iter->filename) != 0){
+      gchar *s, *pkg;
+      s = pkg = strdup (filename);
+      for (int i = 0; i < 3; ++i)
+      {
+          if (NULL == (s = strrchr (pkg, '-')))
+          {
+              free (pkg);
+              debug ("on_event_pkgdownload_done: invalid filename: %s", filename);
+              return;
+          }
+          *s = '\0';
+      }
+
+        /* locate pkg in tree */
+        pkg_iter->iter = get_iter_for_pkg(pkg);
+        if (pkg_iter->iter == NULL){
+            free (pkg);
+            debug ("on_event_pkgdownload_done: unable to find iter for %s", filename);
+            return;
+        }
+        if (pkg_iter->filename != NULL){free(pkg_iter->filename);}
+        pkg_iter->filename = strdup(filename);
+        free (pkg);
+    }
 
     gtk_tree_model_get (GTK_TREE_MODEL (updater->store), pkg_iter->iter,
             UCOL_DL_SIZE,       &dl_size,
