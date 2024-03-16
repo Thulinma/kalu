@@ -1,3 +1,8 @@
+# 2024-03-16, v4.5.0
+
+- Compatibility with pacman 6.1
+
+
 # 2021-07-02, v4.4.1
 
 - Support for parallel downloads in the built-in updater (obeys pacman settings and defaults)
