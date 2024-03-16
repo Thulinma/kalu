@@ -532,8 +532,8 @@ question_cb (void *ctx, alpm_question_t *question)
                 alpm_question_conflict_t *q = &question->conflict;
                 const char *reason;
 
-                if (strcmp (q->conflict->reason->name, q->conflict->package1) == 0
-                        || strcmp (q->conflict->reason->name, q->conflict->package2) == 0)
+                if (strcmp (q->conflict->reason->name, alpm_pkg_get_name(q->conflict->package1)) == 0
+                        || strcmp (q->conflict->reason->name, alpm_pkg_get_name(q->conflict->package2)) == 0)
                 {
                     reason = "";
                 }
@@ -608,13 +608,9 @@ question_cb (void *ctx, alpm_question_t *question)
         case ALPM_QUESTION_IMPORT_KEY:
             {
                 alpm_question_import_key_t *q = &question->import_key;
-                gchar created[12];
-                strftime (created, 12, "%Y-%m-%d", localtime (&q->key->created));
-
                 emit_signal ("AskImportKey", "sss",
-                        q->key->fingerprint,
-                        q->key->uid,
-                        created);
+                        q->fingerprint,
+                        q->uid);
                 break;
             }
 
@@ -1190,16 +1186,16 @@ get_packages (GVariant *parameters)
                 {
                     snprintf (buf, 255,
                             _("- Packages %s and %s are in conflict\n"),
-                            conflict->package1,
-                            conflict->package2);
+                            alpm_pkg_get_name(conflict->package1),
+                            alpm_pkg_get_name(conflict->package2));
                 }
                 else
                 {
                     char *reason = alpm_dep_compute_string (conflict->reason);
                     snprintf (buf, 255,
                             _("- Packages %s and %s are in conflict: %s\n"),
-                            conflict->package1,
-                            conflict->package2,
+                            alpm_pkg_get_name(conflict->package1),
+                            alpm_pkg_get_name(conflict->package2),
                             reason);
                     free (reason);
                 }

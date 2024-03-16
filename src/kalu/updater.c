@@ -1414,7 +1414,7 @@ on_corrupted_pkg (KaluUpdater *kupdater _UNUSED_, const gchar *file, const gchar
 
 static gboolean
 on_import_key (KaluUpdater *kupdater _UNUSED_, const gchar *key_fingerprint,
-               const gchar *key_uid, const gchar *key_created)
+               const gchar *key_uid)
 {
     gchar question[255], details[255];
     gchar *det;
@@ -1422,10 +1422,9 @@ on_import_key (KaluUpdater *kupdater _UNUSED_, const gchar *key_fingerprint,
 
     snprintf (question, 255, _("Do you want to import key %s ?"),
             key_fingerprint);
-    snprintf (details,  255, _("Key %s: %s (created %s)"),
+    snprintf (details,  255, _("Key %s: %s"),
             key_fingerprint,
-            key_uid,
-            key_created);
+            key_uid);
     det = g_markup_escape_text (details, -1);
     add_log (LOGTYPE_INFO, "%s\n%s\n", question, det);
     answer = confirm (question, det, _("Yes, import key"), NULL, _("No"), NULL,
@@ -2788,8 +2787,10 @@ question_cb (void *ctx, alpm_question_t *question)
             {
                 alpm_question_conflict_t *q = (alpm_question_conflict_t *) question;
                 const char *reason;
-                if (strcmp (q->conflict->reason->name, q->conflict->package1) == 0
-                        || strcmp (q->conflict->reason->name, q->conflict->package2) == 0)
+                if (
+                  strcmp (q->conflict->reason->name, alpm_pkg_get_name(q->conflict->package1)) == 0
+                  || strcmp (q->conflict->reason->name, alpm_pkg_get_name(q->conflict->package2)) == 0
+                )
                 {
                     reason = "";
                 }
@@ -2798,8 +2799,8 @@ question_cb (void *ctx, alpm_question_t *question)
                     reason = q->conflict->reason->name;
                 }
                 q->remove = on_conflict_pkg (NULL,
-                        q->conflict->package1,
-                        q->conflict->package2,
+                        alpm_pkg_get_name(q->conflict->package1),
+                        alpm_pkg_get_name(q->conflict->package2),
                         reason);
                 break;
             }
@@ -2856,10 +2857,7 @@ question_cb (void *ctx, alpm_question_t *question)
         case ALPM_QUESTION_IMPORT_KEY:
             {
                 alpm_question_import_key_t *q = (alpm_question_import_key_t *) question;
-                gchar created[12];
-                strftime (created, 12, "%Y-%m-%d", localtime (&q->key->created));
-
-                q->import = on_import_key (NULL, q->key->fingerprint, q->key->uid, created);
+                q->import = on_import_key (NULL, q->fingerprint, q->uid);
                 break;
             }
 
