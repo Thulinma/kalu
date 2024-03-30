@@ -807,8 +807,8 @@ kalu_alpm_has_updates (alpm_list_t **packages, GError **error)
                     {
                         len -= snprintf (buf, 255,
                                 _("- %s and %s are in conflict\n"),
-                                conflict->package1,
-                                conflict->package2);
+                                alpm_pkg_get_name(conflict->package1),
+                                alpm_pkg_get_name(conflict->package2));
                         if (len >= 0)
                         {
                             strncat (err, buf, (size_t) len);
@@ -820,8 +820,8 @@ kalu_alpm_has_updates (alpm_list_t **packages, GError **error)
                         reason = alpm_dep_compute_string (conflict->reason);
                         len -= snprintf (buf, 255,
                                 _("- %s and %s are in conflict (%s)\n"),
-                                conflict->package1,
-                                conflict->package2,
+                                alpm_pkg_get_name(conflict->package1),
+                                alpm_pkg_get_name(conflict->package2),
                                 reason);
                         if (len >= 0)
                         {

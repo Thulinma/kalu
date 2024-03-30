@@ -731,8 +731,8 @@ on_event_pkgdownload_start (KaluUpdater *kupdater _UNUSED_, const gchar *filenam
     pkg_iter->iter = get_iter_for_pkg (pkg);
     if (pkg_iter->iter == NULL)
     {
-        free (pkg);
         debug ("on_download: unable to find iter for %s", pkg);
+        free (pkg);
         return;
     }
     free (pkg);
@@ -2059,7 +2059,7 @@ updater_get_packages_cb (KaluUpdater *kupdater _UNUSED_, const gchar *errmsg,
         updater->pctg_sysupgrade        = PCTG_DL_ONLY_SYSUPGRADE;
 
         size = humanize_size (dl_size, '\0', &unit);
-        snprint_size (dl_buf, 255, size, unit);
+        snprint_size (dl_buf, 23, size, unit);
 #define fmt _("Download:\t%s")
         if (G_UNLIKELY (g_snprintf (buf, 255, fmt, dl_buf) >= 255))
             b = g_strdup_printf (fmt, dl_buf);
@@ -2749,9 +2749,12 @@ btn_rerun_cb (GtkButton *button _UNUSED_, gpointer data _UNUSED_)
 }
 
 static void
-dl_progress_cb (void * ctx, const gchar *filename, off_t xfered, off_t total)
+dl_progress_cb (void * ctx, const char *filename, enum _alpm_download_event_type_t event, void * data)
 {
-    on_download (NULL, filename, (guint) xfered, (guint) total);
+  if (event == ALPM_DOWNLOAD_PROGRESS){
+    alpm_download_event_progress_t * progress_data = (alpm_download_event_progress_t *)data;
+    on_download (NULL, filename, (guint) progress_data->downloaded, (guint) progress_data->total);
+  }
     /* because in simulation the sync-ing dbs is actually done in the main
      * thread */
     while (gtk_events_pending ())

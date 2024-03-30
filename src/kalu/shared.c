@@ -62,11 +62,11 @@ _realloc (void *ptr, size_t len)
 void
 set_user_agent (void)
 {
-    char ua[128];
+    char ua[200];
     struct utsname un;
 
     uname (&un);
-    snprintf (ua, 128, "kalu/%s (%s %s) libalpm/%s",
+    snprintf (ua, 200, "kalu/%s (%s %s) libalpm/%s",
             PACKAGE_VERSION, un.sysname, un.machine, alpm_version ());
     setenv ("HTTP_USER_AGENT", ua, 0);
 }

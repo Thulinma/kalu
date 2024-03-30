@@ -312,7 +312,7 @@ parse_to_buffer (GtkTextBuffer *buffer, const gchar *text, gsize text_len)
     GtkTextTag  *tag;
     alpm_list_t *i, *tags = NULL;
     gchar       *s, *ss, *start, *end;
-    gchar        buf[10];
+    gchar        buf[16];
     gint         c, margin;
     gint         in_ordered_list = -1;
     GdkRGBA      color;
@@ -582,7 +582,7 @@ parse_to_buffer (GtkTextBuffer *buffer, const gchar *text, gsize text_len)
             else
             {
                 ++in_ordered_list;
-                snprintf (buf, 10, "%d. ", in_ordered_list);
+                snprintf (buf, 16, "%d. ", in_ordered_list);
                 ss = buf;
             }
             insert_text_with_tags ();

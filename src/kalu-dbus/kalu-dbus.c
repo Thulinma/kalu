@@ -1019,7 +1019,6 @@ add_db (GVariant *parameters)
         if (alpm_db_add_server (db, server) != 0)
         {
             FREELIST (servers);
-            free (server);
             /* pm_errno is set by alpm_db_setserver */
             method_failed ("AddDb",
                     _("Could not add server %s to database %s: %s\n"),
@@ -1027,6 +1026,7 @@ add_db (GVariant *parameters)
                     name,
                     alpm_strerror (alpm_errno (handle)));
             state = old_state;
+            free (server);
             return G_SOURCE_REMOVE;
         }
         free (server);
