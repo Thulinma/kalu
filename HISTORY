@@ -1,3 +1,8 @@
+# 2024-03-30, v4.5.1
+
+- Bugfixes (most importantly an overflow in updater_get_packages_cb)
+
+
 # 2024-03-16, v4.5.0
 
 - Compatibility with pacman 6.1
