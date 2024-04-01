@@ -2120,7 +2120,7 @@ updater_get_packages_cb (KaluUpdater *kupdater _UNUSED_, const gchar *errmsg,
         updater->pctg_sysupgrade        = PCTG_SYSUPGRADE;
 
         size = humanize_size (dl_size, '\0', &unit);
-        snprint_size (dl_buf, 255, size, unit);
+        snprint_size (dl_buf, 23, size, unit);
 #define fmt "Download:\t%s\nInstall:\t\t%s\nNet:\t\t\t%s"
         if (G_UNLIKELY (g_snprintf (buf, 255, fmt, dl_buf, inst_buf, net_buf) >= 255))
             b = g_strdup_printf (fmt, dl_buf, inst_buf, net_buf);

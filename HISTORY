@@ -1,3 +1,8 @@
+# 2024-03-30, v4.5.2
+
+- Bugfixes (one more of the same overflow as before... sorry -_- )
+
+
 # 2024-03-30, v4.5.1
 
 - Bugfixes (most importantly an overflow in updater_get_packages_cb)
