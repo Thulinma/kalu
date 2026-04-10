@@ -6,6 +6,10 @@ DISTCLEANFILES = \
 
 CLEANFILES = \
 	kalu.png \
+	kalu.svg \
+	kalu-paused.svg \
+	kalu-gray.svg \
+	kalu-gray-paused.svg \
 	kalu-logo \
 	misc/org.jjk.kalu.service \
 	misc/30-kalu.rules
@@ -129,6 +133,9 @@ hicolor_DATA = kalu.png
 hicolor16dir = $(datadir)/icons/hicolor/16x16/apps
 hicolor16_DATA = kalu16.png
 
+hicolorsvgdir = $(datadir)/icons/hicolor/scalable/apps
+hicolorsvg_DATA = kalu.svg
+
 desktopdir = /usr/share/applications
 dist_desktop_DATA = misc/kalu.desktop
 endif
@@ -158,6 +165,10 @@ EXTRA_DIST = \
 	doc/kalu.pod \
 	misc/org.jjk.kalu.service.tpl \
 	misc/30-kalu.rules.tpl \
+	misc/kalu.svg \
+	misc/kalu-paused.svg \
+	misc/kalu-gray.svg \
+	misc/kalu-gray-paused.svg \
 	misc/arch_linux_48x48_icon_by_painlessrob.png \
 	misc/arch_linux_48x48_icon_by_painlessrob_resized_16x16.png
 
@@ -191,9 +202,23 @@ kalu.png: misc/arch_linux_48x48_icon_by_painlessrob.png
 kalu16.png: misc/arch_linux_48x48_icon_by_painlessrob_resized_16x16.png
 	$(AM_V_GEN)$(LN_S) misc/arch_linux_48x48_icon_by_painlessrob_resized_16x16.png kalu16.png
 
+kalu.svg: misc/kalu.svg
+	$(AM_V_GEN)$(LN_S) misc/kalu.svg kalu.svg
+
+kalu-paused.svg: misc/kalu-paused.svg
+	$(AM_V_GEN)$(LN_S) misc/kalu-paused.svg kalu-paused.svg
+
+kalu-gray.svg: misc/kalu-gray.svg
+	$(AM_V_GEN)$(LN_S) misc/kalu-gray.svg kalu-gray.svg
+
+kalu-gray-paused.svg: misc/kalu-gray-paused.svg
+	$(AM_V_GEN)$(LN_S) misc/kalu-gray-paused.svg kalu-gray-paused.svg
+
 install-data-hook:
 	mkdir "$(DESTDIR)$(docdir)/html"
 	mv "$(DESTDIR)$(docdir)/index.html" "$(DESTDIR)$(docdir)/html/"
 if ! DISABLE_GUI
 	mv "$(DESTDIR)$(hicolor16dir)/kalu16.png" "$(DESTDIR)$(hicolor16dir)/kalu.png"
+	mv "$(DESTDIR)$(hicolorsvgdir)/kalu.svg" "$(DESTDIR)$(hicolorsvgdir)/kalu-paused.svg"
+	mv "$(DESTDIR)$(hicolorsvgdir)/kalu-gray.svg" "$(DESTDIR)$(hicolorsvgdir)/kalu-gray-paused.svg"
 endif

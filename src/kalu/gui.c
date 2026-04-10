@@ -37,6 +37,10 @@
 #include "updater.h"
 #endif
 
+#ifdef ENABLE_STATUS_NOTIFIER
+#include <libayatana-appindicator/app-indicator.h>
+#endif
+
 #ifndef DISABLE_UPDATER
 #define run_updater()   do {            \
     set_kalpm_busy (TRUE);              \
@@ -55,7 +59,6 @@ static void menu_check_cb (GtkMenuItem *item, gpointer data);
 static void menu_quit_cb (GtkMenuItem *item, gpointer data);
 static gboolean set_status_icon (gboolean active);
 #ifdef ENABLE_STATUS_NOTIFIER
-static void sn_upd_status (gboolean active);
 static void sn_refresh_tooltip (void);
 #endif
 
@@ -564,9 +567,6 @@ update_icon (void)
     g_main_context_invoke (NULL,
                            (GSourceFunc) set_status_icon,
                            GINT_TO_POINTER (active));
-#ifdef ENABLE_STATUS_NOTIFIER
-    sn_upd_status (active);
-#endif
 }
 
 static void
@@ -774,10 +774,7 @@ abort_checks (void)
     raise (SIGINT);
 }
 
-void
-icon_popup_cb (GtkStatusIcon *_icon _UNUSED_, guint button, guint activate_time,
-               gpointer data _UNUSED_)
-{
+GtkWidget* build_kalu_menu () {
     GtkWidget   *menu;
     GtkWidget   *item;
     GtkWidget   *image;
@@ -982,8 +979,15 @@ icon_popup_cb (GtkStatusIcon *_icon _UNUSED_, guint button, guint activate_time,
     gtk_widget_show (item);
     gtk_menu_attach (GTK_MENU (menu), item, 0, 1, pos, pos + 1); ++pos;
 
-    /* since we don't pack the menu anywhere, we need to "take ownership" of it,
-     * and we'll destroy it when done, i.e. when it's unmapped */
+    return menu;
+}
+
+void
+icon_popup_cb (GtkStatusIcon *_icon _UNUSED_, guint button, guint activate_time,
+               gpointer data _UNUSED_)
+{
+    GtkWidget *menu = build_kalu_menu();
+
     g_object_ref_sink (menu);
     gtk_widget_add_events (menu, GDK_STRUCTURE_MASK);
     g_signal_connect (G_OBJECT (menu), "unmap-event",
@@ -991,15 +995,6 @@ icon_popup_cb (GtkStatusIcon *_icon _UNUSED_, guint button, guint activate_time,
 
     gtk_menu_popup (GTK_MENU (menu), NULL, NULL, NULL, NULL, button, activate_time);
 }
-
-#ifdef ENABLE_STATUS_NOTIFIER
-void
-sn_context_menu_cb (StatusNotifierItem *_sn _UNUSED_, gint x _UNUSED_, gint y _UNUSED_,
-               gpointer data _UNUSED_)
-{
-    icon_popup_cb (NULL, 1, GDK_CURRENT_TIME, NULL);
-}
-#endif
 
 void
 process_fifo_command (const gchar *command)
@@ -1115,21 +1110,6 @@ icon_press_click (gpointer data _UNUSED_)
     return G_SOURCE_REMOVE;
 }
 
-#ifdef ENABLE_STATUS_NOTIFIER
-void sn_cb (gpointer data)
-{
-    guint t = GPOINTER_TO_UINT (data);
-
-    if (t == SN_ACTIVATE)
-        icon_press_click (NULL);
-    else /* SN_SECONDARY_ACTIVATE */
-        process_click_action ((kalpm_state.is_paused
-                    && config->on_mdl_click_paused != DO_SAME_AS_ACTIVE)
-                ? config->on_mdl_click_paused
-                : config->on_mdl_click);
-}
-#endif
-
 gboolean
 icon_press_cb (GtkStatusIcon *icon _UNUSED_, GdkEventButton *event, gpointer data _UNUSED_)
 {
@@ -1190,8 +1170,7 @@ icon_press_cb (GtkStatusIcon *icon _UNUSED_, GdkEventButton *event, gpointer dat
 }
 
 #ifdef ENABLE_STATUS_NOTIFIER
-StatusNotifierItem *sn = NULL;
-GdkPixbuf *sn_icon[NB_SN_ICONS] = { NULL, };
+AppIndicator *sn = NULL;
 #endif
 GtkStatusIcon *icon = NULL;
 
@@ -1385,23 +1364,8 @@ set_status_icon (gboolean active)
     if (active)
     {
 #ifdef ENABLE_STATUS_NOTIFIER
-        if (sn)
-        {
-            guint i;
-            const gchar *s;
-
-            s = (kalpm_state.is_paused) ? "kalu-paused" : "kalu";
-            i = (kalpm_state.is_paused) ? SN_ICON_KALU_PAUSED : SN_ICON_KALU;
-            if (sn_icon[i])
-                g_object_set (G_OBJECT (sn),
-                        "main-icon-pixbuf",     sn_icon[i],
-                        "tooltip-icon-pixbuf",  sn_icon[i],
-                        NULL);
-            else
-                g_object_set (G_OBJECT (sn),
-                        "main-icon-name",       s,
-                        "tooltip-icon-name",    s,
-                        NULL);
+        if (sn) {
+          app_indicator_set_icon_full(sn, (kalpm_state.is_paused)?"kalu-paused":"kalu", "kalu");
         }
 
         /* in case both are set (i.e. sn is e.g. waiting for a host, while we
@@ -1419,27 +1383,9 @@ set_status_icon (gboolean active)
     else
     {
 #ifdef ENABLE_STATUS_NOTIFIER
-        if (sn)
-        {
-            guint i;
-            const gchar *s;
-
-            s = (kalpm_state.is_paused) ? "kalu-gray-paused" : "kalu-gray";
-            i = (kalpm_state.is_paused) ? SN_ICON_KALU_GRAY_PAUSED : SN_ICON_KALU_GRAY;
-            if (sn_icon[i])
-                g_object_set (G_OBJECT (sn),
-                        "main-icon-pixbuf",     sn_icon[i],
-                        "tooltip-icon-pixbuf",  sn_icon[i],
-                        NULL);
-            else
-                g_object_set (G_OBJECT (sn),
-                        "main-icon-name",       s,
-                        "tooltip-icon-name",    s,
-                        NULL);
+        if (sn) {
+          app_indicator_set_icon_full(sn, (kalpm_state.is_paused)?"kalu-gray-paused":"kalu-gray", "kalu");
         }
-
-        /* in case both are set (i.e. sn is e.g. waiting for a host, while we
-         * use icon as fallback */
         if (icon)
 #endif
         {
@@ -1450,18 +1396,15 @@ set_status_icon (gboolean active)
             G_GNUC_END_IGNORE_DEPRECATIONS
         }
     }
+
+#ifdef ENABLE_STATUS_NOTIFIER
+    GtkWidget *menu = build_kalu_menu();
+    app_indicator_set_menu(sn, GTK_MENU(menu));
+    app_indicator_set_status(sn, APP_INDICATOR_STATUS_ACTIVE);
+#endif
     /* do NOT get called back */
     return FALSE;
 }
-
-#ifdef ENABLE_STATUS_NOTIFIER
-static void sn_upd_status (gboolean active)
-{
-    if (sn)
-        status_notifier_item_set_status (sn,
-                (active) ? STATUS_NOTIFIER_STATUS_ACTIVE : STATUS_NOTIFIER_STATUS_PASSIVE);
-}
-#endif
 
 void
 set_kalpm_nb (check_t type, gint nb, gboolean do_update_icon)
@@ -1526,29 +1469,14 @@ switch_status_icon (void)
 }
 
 #ifdef ENABLE_STATUS_NOTIFIER
-static void sn_refresh_tooltip (void)
+static void 
+sn_refresh_tooltip (void)
 {
+    if (!sn) return;
     gchar buf[512];
     gint max = 512;
-
-    if (!sn)
-        return;
-
-    status_notifier_item_freeze_tooltip (sn);
-    make_tooltip (buf, &max, TT_TITLE);
-    if (max > 0)
-    {
-        status_notifier_item_set_tooltip_title (sn, buf);
-    }
-    max = 512;
-    /* in case there's nothing, else we would set the title as body */
-    buf[0] = '\0';
-    make_tooltip (buf, &max, TT_BODY);
-    if (max > 0)
-    {
-        status_notifier_item_set_tooltip_body (sn, buf);
-    }
-    status_notifier_item_thaw_tooltip (sn);
+    make_tooltip (buf, &max, TT_FULL);
+    app_indicator_set_title(sn, buf);
 }
 #endif
 

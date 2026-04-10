@@ -74,12 +74,9 @@ gboolean is_pacman_conflicting (alpm_list_t *packages);
 void kalu_check (gboolean is_auto);
 gboolean kalu_auto_check (void);
 
-#ifdef ENABLE_STATUS_NOTIFIER
-void sn_cb (gpointer data);
-void sn_context_menu_cb (StatusNotifierItem *_sn, gint x, gint y, gpointer data);
-#endif
 void icon_popup_cb (GtkStatusIcon *_icon, guint button, guint activate_time,
                gpointer data);
+GtkWidget* build_kalu_menu ();
 
 void add_open_window (gpointer window);
 void remove_open_window (gpointer window);

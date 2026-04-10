@@ -45,7 +45,7 @@
 
 /* statusnotifier */
 #ifdef ENABLE_STATUS_NOTIFIER
-#include <statusnotifier.h>
+#include <libayatana-appindicator/app-indicator.h>
 #endif
 
 /* kalu */
@@ -962,8 +962,7 @@ debug (const char *fmt, ...)
 
 #ifndef DISABLE_GUI
 #ifdef ENABLE_STATUS_NOTIFIER
-extern StatusNotifierItem *sn;
-extern GdkPixbuf *sn_icon[NB_SN_ICONS];
+extern AppIndicator *sn;
 #endif
 extern GtkStatusIcon *icon;
 extern GPtrArray     *open_windows;
@@ -1209,48 +1208,6 @@ create_status_icon (void)
 
     gtk_status_icon_set_visible (icon, TRUE);
     G_GNUC_END_IGNORE_DEPRECATIONS
-}
-#endif
-
-#ifdef ENABLE_STATUS_NOTIFIER
-static void
-sn_state_cb (void)
-{
-    if (status_notifier_item_get_state (sn) == STATUS_NOTIFIER_STATE_REGISTERED)
-    {
-        debug ("StatusNotifierItem registered");
-        if (icon)
-        {
-            debug ("removing GtkStatusIcon");
-            G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-            gtk_status_icon_set_visible (icon, FALSE);
-            G_GNUC_END_IGNORE_DEPRECATIONS
-            g_object_unref (icon);
-            icon = NULL;
-        }
-    }
-}
-
-static void
-sn_reg_failed (StatusNotifierItem *_sn _UNUSED_, GError *error)
-{
-    guint i;
-
-    debug ("StatusNotifierItem registration failed: %s", error->message);
-    if (status_notifier_item_get_state (sn) == STATUS_NOTIFIER_STATE_FAILED)
-    {
-        debug ("no possible recovery; destroy StatusNotifierItem");
-        g_object_unref (sn);
-        sn = NULL;
-        for (i = 0; i < NB_SN_ICONS; ++i)
-            if (sn_icon[i])
-            {
-                g_object_unref (sn_icon[i]);
-                sn_icon[i] = NULL;
-            }
-    }
-    /* fallback to systray */
-    create_status_icon ();
 }
 #endif
 
@@ -1565,22 +1522,11 @@ main (int argc, char *argv[])
         stream = g_memory_input_stream_new_from_data (kalu_logo, kalu_logo_size, NULL);
         pixbuf_kalu = gdk_pixbuf_new_from_stream (stream, NULL, NULL);
         g_object_unref (G_OBJECT (stream));
-#ifdef ENABLE_STATUS_NOTIFIER
-        sn_icon[SN_ICON_KALU] = g_object_ref (pixbuf_kalu);
-#endif
 
         G_GNUC_BEGIN_IGNORE_DEPRECATIONS
         gtk_icon_theme_add_builtin_icon ("kalu", 48, pixbuf_kalu);
         G_GNUC_END_IGNORE_DEPRECATIONS
     }
-#ifdef ENABLE_STATUS_NOTIFIER
-    else if (config->sn_force_icons)
-    {
-        debug ("Force loading icon \"kalu\" from theme for StatusNotifier");
-        pixbuf_kalu = gtk_icon_theme_load_icon (icon_theme, "kalu", 48, GTK_ICON_LOOKUP_FORCE_SIZE, NULL);
-        sn_icon[SN_ICON_KALU] = g_object_ref (pixbuf_kalu);
-    }
-#endif
 
     /* kalu-paused */
     if (!gtk_icon_theme_has_icon (icon_theme, "kalu-paused"))
@@ -1593,19 +1539,8 @@ main (int argc, char *argv[])
         G_GNUC_BEGIN_IGNORE_DEPRECATIONS
         gtk_icon_theme_add_builtin_icon ("kalu-paused", 48, pixbuf);
         G_GNUC_END_IGNORE_DEPRECATIONS
-#ifdef ENABLE_STATUS_NOTIFIER
-        sn_icon[SN_ICON_KALU_PAUSED] = g_object_ref (pixbuf);
-#endif
         g_object_unref (pixbuf);
     }
-#ifdef ENABLE_STATUS_NOTIFIER
-    else if (config->sn_force_icons)
-    {
-        debug ("Force loading icon \"kalu-paused\" from theme for StatusNotifier");
-        pixbuf = gtk_icon_theme_load_icon (icon_theme, "kalu-paused", 48, GTK_ICON_LOOKUP_FORCE_SIZE, NULL);
-        sn_icon[SN_ICON_KALU_PAUSED] = pixbuf;
-    }
-#endif
 
     /* kalu-gray */
     if (!gtk_icon_theme_has_icon (icon_theme, "kalu-gray"))
@@ -1618,19 +1553,8 @@ main (int argc, char *argv[])
         G_GNUC_BEGIN_IGNORE_DEPRECATIONS
         gtk_icon_theme_add_builtin_icon ("kalu-gray", 48, pixbuf);
         G_GNUC_END_IGNORE_DEPRECATIONS
-#ifdef ENABLE_STATUS_NOTIFIER
-        sn_icon[SN_ICON_KALU_GRAY] = g_object_ref (pixbuf);
-#endif
         g_object_unref (pixbuf);
     }
-#ifdef ENABLE_STATUS_NOTIFIER
-    else if (config->sn_force_icons)
-    {
-        debug ("Force loading icon \"kalu-gray\" from theme for StatusNotifier");
-        pixbuf = gtk_icon_theme_load_icon (icon_theme, "kalu-gray", 48, GTK_ICON_LOOKUP_FORCE_SIZE, NULL);
-        sn_icon[SN_ICON_KALU_GRAY] = pixbuf;
-    }
-#endif
 
     if (pixbuf_kalu)
         g_object_unref (pixbuf_kalu);
@@ -1645,52 +1569,22 @@ main (int argc, char *argv[])
         G_GNUC_BEGIN_IGNORE_DEPRECATIONS
         gtk_icon_theme_add_builtin_icon ("kalu-gray-paused", 48, pixbuf);
         G_GNUC_END_IGNORE_DEPRECATIONS
-#ifdef ENABLE_STATUS_NOTIFIER
-        sn_icon[SN_ICON_KALU_GRAY_PAUSED] = g_object_ref (pixbuf);
-#endif
         g_object_unref (pixbuf);
         g_object_unref (pixbuf_kalu);
     }
-#ifdef ENABLE_STATUS_NOTIFIER
-    else if (config->sn_force_icons)
-    {
-        debug ("Force loading icon \"kalu-gray-paused\" from theme for StatusNotifier");
-        pixbuf = gtk_icon_theme_load_icon (icon_theme, "kalu-gray-paused", 48, GTK_ICON_LOOKUP_FORCE_SIZE, NULL);
-        sn_icon[SN_ICON_KALU_GRAY_PAUSED] = pixbuf;
-    }
-#endif
 
 #ifdef ENABLE_STATUS_NOTIFIER
-    debug ("create StatusNotifierItem");
-    sn = STATUS_NOTIFIER_ITEM (g_object_new (STATUS_NOTIFIER_TYPE_ITEM,
-            "id",               "kalu",
-            "title",            "kalu",
-            "tooltip-title",    "kalu",
-            NULL));
-    if (sn_icon[SN_ICON_KALU_GRAY])
-        g_object_set (G_OBJECT (sn),
-                "main-icon-pixbuf",     sn_icon[SN_ICON_KALU_GRAY],
-                "tooltip-icon-pixbuf",  sn_icon[SN_ICON_KALU_GRAY],
-                NULL);
-    else
-        g_object_set (G_OBJECT (sn),
-                "main-icon-name",       "kaly-gray",
-                "tooltip-icon-name",    "kaly-gray",
-                NULL);
-    g_signal_connect (G_OBJECT (sn), "notify::state",
-            G_CALLBACK (sn_state_cb), NULL);
-    g_signal_connect (G_OBJECT (sn), "registration-failed",
-            G_CALLBACK (sn_reg_failed), NULL);
-    g_signal_connect (G_OBJECT (sn), "context-menu",
-            G_CALLBACK (sn_context_menu_cb), NULL);
-    g_signal_connect_swapped (G_OBJECT (sn), "activate",
-            G_CALLBACK (sn_cb), GUINT_TO_POINTER (SN_ACTIVATE));
-    g_signal_connect_swapped (G_OBJECT (sn), "secondary-activate",
-            G_CALLBACK (sn_cb), GUINT_TO_POINTER (SN_SECONDARY_ACTIVATE));
-    status_notifier_item_register (sn);
+    debug("create AppIndicator (StatusNotifierItem)");
+
+    sn = app_indicator_new("kalu", "kalu", APP_INDICATOR_CATEGORY_APPLICATION_STATUS);
+    app_indicator_set_title(sn, "kalu - Keep Arch Linux Up-to-date");
+    GtkWidget *menu = build_kalu_menu();
+    app_indicator_set_menu(sn, GTK_MENU(menu));
+    app_indicator_set_status(sn, APP_INDICATOR_STATUS_ACTIVE);
+
 #else
     /* create systray icon */
-    create_status_icon ();
+    create_status_icon();
 #endif
 
     /* takes care of setting timeout_skip (if needed) and also triggers the
@@ -1707,14 +1601,6 @@ eop:
     {
         notify_uninit ();
     }
-#ifdef ENABLE_STATUS_NOTIFIER
-    guint i;
-    for (i = 0; i < NB_SN_ICONS; ++i)
-        if (sn_icon[i])
-            g_object_unref (sn_icon[i]);
-    if (sn)
-        g_object_unref (sn);
-#endif
 #endif /* DISABLE_GUI */
     kalu_alpm_rmdb (keep_tmp_dbpath);
     if (config->is_curl_init)

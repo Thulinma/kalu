@@ -132,9 +132,11 @@ AS_IF([test "x$with_gui" = "xyes"], [
     PKG_CHECK_MODULES(GTK, [gtk+-3.0], , AC_MSG_ERROR([GTK+3 is required]))
 
     AS_IF([test "x$with_status_notifier" = "xyes"], [
-           PKG_CHECK_MODULES(STATUS_NOTIFIER, [statusnotifier], ,
-                AC_MSG_ERROR([statusnotifier is required for StatusNotifierItem support]))
-           AC_DEFINE([ENABLE_STATUS_NOTIFIER], 1, [Enable StatusNotifierItem])
+      PKG_CHECK_MODULES(STATUS_NOTIFIER, [ayatana-appindicator3-0.1], [
+        AC_DEFINE([ENABLE_STATUS_NOTIFIER], 1, [Enable StatusNotifierItem via Ayatana AppIndicator])
+      ], [
+        AC_MSG_ERROR([ayatana-appindicator3-0.1 is required for StatusNotifierItem support])
+      ])
     ])
 ], [
     AC_DEFINE([DISABLE_GUI], 1, [Disable GUI])
