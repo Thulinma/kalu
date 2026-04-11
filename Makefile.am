@@ -134,7 +134,7 @@ hicolor16dir = $(datadir)/icons/hicolor/16x16/apps
 hicolor16_DATA = kalu16.png
 
 hicolorsvgdir = $(datadir)/icons/hicolor/scalable/apps
-hicolorsvg_DATA = kalu.svg
+hicolorsvg_DATA = kalu.svg kalu-paused.svg kalu-gray.svg kalu-gray-paused.svg
 
 desktopdir = /usr/share/applications
 dist_desktop_DATA = misc/kalu.desktop
@@ -219,6 +219,4 @@ install-data-hook:
 	mv "$(DESTDIR)$(docdir)/index.html" "$(DESTDIR)$(docdir)/html/"
 if ! DISABLE_GUI
 	mv "$(DESTDIR)$(hicolor16dir)/kalu16.png" "$(DESTDIR)$(hicolor16dir)/kalu.png"
-	mv "$(DESTDIR)$(hicolorsvgdir)/kalu.svg" "$(DESTDIR)$(hicolorsvgdir)/kalu-paused.svg"
-	mv "$(DESTDIR)$(hicolorsvgdir)/kalu-gray.svg" "$(DESTDIR)$(hicolorsvgdir)/kalu-gray-paused.svg"
 endif
