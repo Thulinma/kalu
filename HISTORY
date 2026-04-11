@@ -1,3 +1,10 @@
+# 2026-04-11, v4.6.0
+
+- Changed SNI icon implementation from jjacky's statusnotifier library to use ayatana-appindicator, instead
+
+This (finally) fixes the right-click menu on Wayland
+
+
 # 2024-03-30, v4.5.2
 
 - Bugfixes (one more of the same overflow as before... sorry -_- )

@@ -718,7 +718,7 @@ menu_about_cb (GtkMenuItem *item _UNUSED_, gpointer data _UNUSED_)
     GInputStream    *stream;
     GdkPixbuf       *pixbuf;
     const char *authors[] = {
-        "Olivier Brunel", "Dave Gamble", "Pacman Development Team",
+        "Olivier Brunel", "Jaron Viëtor", "Dave Gamble", "Pacman Development Team",
         NULL };
     const char *artists[] = { "Painless Rob", NULL };
 
@@ -735,7 +735,7 @@ menu_about_cb (GtkMenuItem *item _UNUSED_, gpointer data _UNUSED_)
     gtk_about_dialog_set_comments (about, PACKAGE_TAG);
     gtk_about_dialog_set_website (about, "https://jjacky.com/kalu");
     gtk_about_dialog_set_website_label (about, "https://jjacky.com/kalu");
-    gtk_about_dialog_set_copyright (about, "Copyright (C) 2012-2018 Olivier Brunel");
+    gtk_about_dialog_set_copyright (about, "Copyright (C) 2012-2018 Olivier Brunel, later additions by Jaron Viëtor");
     gtk_about_dialog_set_license_type (about, GTK_LICENSE_GPL_3_0);
     gtk_about_dialog_set_authors (about, authors);
     gtk_about_dialog_set_artists (about, artists);

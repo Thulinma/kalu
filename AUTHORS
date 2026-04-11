@@ -1,7 +1,9 @@
-kalu is developed by Olivier Brunel, using cJSON[1] by Dave Gamble
+kalu was originally created by Olivier Brunel, using cJSON[1] by Dave Gamble
+Currently being maintained by Jaron Viëtor
+
 See LICENSE for more
 
-kalu's icon was made by Painless Rob[2]
+kalu's icon was originally made by Painless Rob[2], but reworked into SVG format by Jaron later
 
 [1]: http://sourceforge.net/projects/cjson/
 [2]: https://bbs.archlinux.org/viewtopic.php?id=130839
