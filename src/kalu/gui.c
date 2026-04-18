@@ -36,9 +36,11 @@
 #include "kalu-updater.h"
 #include "updater.h"
 #endif
-
 #ifdef ENABLE_STATUS_NOTIFIER
-#include <libayatana-appindicator/app-indicator.h>
+#include <gtk/gtk.h>
+#include <libdbusmenu-glib/menuitem.h>
+#include <libdbusmenu-glib/server.h>
+#include <libdbusmenu-gtk/parser.h>
 #endif
 
 #ifndef DISABLE_UPDATER
@@ -58,9 +60,6 @@ static void notif_run_simulation (NotifyNotification  *notification,
 static void menu_check_cb (GtkMenuItem *item, gpointer data);
 static void menu_quit_cb (GtkMenuItem *item, gpointer data);
 static gboolean set_status_icon (gboolean active);
-#ifdef ENABLE_STATUS_NOTIFIER
-static void sn_refresh_tooltip (void);
-#endif
 
 extern kalpm_state_t kalpm_state;
 
@@ -591,9 +590,6 @@ set_pause (gint paused)
         }
 
         update_icon ();
-#ifdef ENABLE_STATUS_NOTIFIER
-        sn_refresh_tooltip ();
-#endif
     }
     else
     {
@@ -784,10 +780,10 @@ GtkWidget* build_kalu_menu () {
 
     if (kalpm_state.is_busy && !kalpm_state.is_updater)
     {
-        item = donna_image_menu_item_new_with_label (
+        item = gtk_image_menu_item_new_with_label (
             _c("systray-menu", "Abort running checks"));
         image = gtk_image_new_from_icon_name ("process-stop", GTK_ICON_SIZE_MENU);
-        donna_image_menu_item_set_image (DONNA_IMAGE_MENU_ITEM (item), image);
+        gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), image);
         gtk_widget_set_tooltip_text (item,
                                      _("Abort currently running checks"));
         g_signal_connect (G_OBJECT (item), "activate",
@@ -800,11 +796,11 @@ GtkWidget* build_kalu_menu () {
         gtk_menu_attach (GTK_MENU (menu), item, 0, 1, pos, pos + 1); ++pos;
     }
 
-    item = donna_image_menu_item_new_with_label (
+    item = gtk_image_menu_item_new_with_label (
             _c("systray-menu", "Re-show last notifications..."));
     gtk_widget_set_sensitive (item, !kalpm_state.is_busy && config->last_notifs);
     image = gtk_image_new_from_icon_name ("edit-redo", GTK_ICON_SIZE_MENU);
-    donna_image_menu_item_set_image (DONNA_IMAGE_MENU_ITEM (item), image);
+    gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), image);
     gtk_widget_set_tooltip_text (item,
             _("Show notifications from last ran checks"));
     g_signal_connect (G_OBJECT (item), "activate",
@@ -812,7 +808,7 @@ GtkWidget* build_kalu_menu () {
     gtk_widget_show (item);
     gtk_menu_attach (GTK_MENU (menu), item, 0, 1, pos, pos + 1); ++pos;
 
-    item = donna_image_menu_item_new_with_label ((kalpm_state.is_paused)
+    item = gtk_image_menu_item_new_with_label ((kalpm_state.is_paused)
             ? _c("systray-menu", "Resume automatic checks")
             : _c("systray-menu", "Pause automatic checks"));
     gtk_widget_set_sensitive (item, !kalpm_state.is_busy);
@@ -820,7 +816,7 @@ GtkWidget* build_kalu_menu () {
             ? "media-playback-start"
             : "media-playback-pause",
             GTK_ICON_SIZE_MENU);
-    donna_image_menu_item_set_image (DONNA_IMAGE_MENU_ITEM (item), image);
+    gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), image);
     gtk_widget_set_tooltip_text (item, (kalpm_state.is_paused)
             ? _("Resume automatic checks (starting now)")
             : _("Pause automatic checks (until resumed)"));
@@ -833,11 +829,11 @@ GtkWidget* build_kalu_menu () {
     gtk_widget_show (item);
     gtk_menu_attach (GTK_MENU (menu), item, 0, 1, pos, pos + 1); ++pos;
 
-    item = donna_image_menu_item_new_with_label (
+    item = gtk_image_menu_item_new_with_label (
             _c("systray-menu", "Check for Upgrades..."));
     gtk_widget_set_sensitive (item, !kalpm_state.is_busy);
     image = gtk_image_new_kalu ();
-    donna_image_menu_item_set_image (DONNA_IMAGE_MENU_ITEM (item), image);
+    gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), image);
     gtk_widget_set_tooltip_text (item,
             _("Check if there are any upgrades available"));
     g_signal_connect (G_OBJECT (item), "activate",
@@ -846,11 +842,11 @@ GtkWidget* build_kalu_menu () {
     gtk_menu_attach (GTK_MENU (menu), item, 0, 1, pos, pos + 1); ++pos;
 
 #ifndef DISABLE_UPDATER
-    item = donna_image_menu_item_new_with_label (
+    item = gtk_image_menu_item_new_with_label (
             _c("systray-menu", "Upgrade simulation..."));
     gtk_widget_set_sensitive (item, !kalpm_state.is_busy);
     image = gtk_image_new_kalu ();
-    donna_image_menu_item_set_image (DONNA_IMAGE_MENU_ITEM (item), image);
+    gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), image);
     gtk_widget_set_tooltip_text (item, _("Run a system upgrade simulation "
                 "(to preview/help deal with conflicts)"));
     g_signal_connect_swapped (G_OBJECT (item), "activate",
@@ -861,11 +857,11 @@ GtkWidget* build_kalu_menu () {
 
     if (config->action != UPGRADE_NO_ACTION)
     {
-        item = donna_image_menu_item_new_with_label (
+        item = gtk_image_menu_item_new_with_label (
                 _c("systray-menu", "System upgrade..."));
         gtk_widget_set_sensitive (item, !kalpm_state.is_busy);
         image = gtk_image_new_kalu ();
-        donna_image_menu_item_set_image (DONNA_IMAGE_MENU_ITEM (item), image);
+        gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), image);
         gtk_widget_set_tooltip_text (item, _("Perform a system upgrade"));
         g_signal_connect (G_OBJECT (item), "activate",
                 G_CALLBACK (kalu_sysupgrade), NULL);
@@ -877,22 +873,22 @@ GtkWidget* build_kalu_menu () {
     gtk_widget_show (item);
     gtk_menu_attach (GTK_MENU (menu), item, 0, 1, pos, pos + 1); ++pos;
 
-    item = donna_image_menu_item_new_with_label (
+    item = gtk_image_menu_item_new_with_label (
             _c("systray-menu", "Show unread Arch Linux news..."));
     gtk_widget_set_sensitive (item, !kalpm_state.is_busy);
     image = gtk_image_new_kalu ();
-    donna_image_menu_item_set_image (DONNA_IMAGE_MENU_ITEM (item), image);
+    gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), image);
     gtk_widget_set_tooltip_text (item, _("Show only unread Arch Linux news"));
     g_signal_connect (G_OBJECT (item), "activate",
             G_CALLBACK (menu_news_cb), GINT_TO_POINTER (1));
     gtk_widget_show (item);
     gtk_menu_attach (GTK_MENU (menu), item, 0, 1, pos, pos + 1); ++pos;
 
-    item = donna_image_menu_item_new_with_label (
+    item = gtk_image_menu_item_new_with_label (
             _c("systray-menu", "Show recent Arch Linux news..."));
     gtk_widget_set_sensitive (item, !kalpm_state.is_busy);
     image = gtk_image_new_kalu ();
-    donna_image_menu_item_set_image (DONNA_IMAGE_MENU_ITEM (item), image);
+    gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), image);
     gtk_widget_set_tooltip_text (item, _("Show most recent Arch Linux news"));
     g_signal_connect (G_OBJECT (item), "activate",
             G_CALLBACK (menu_news_cb), GINT_TO_POINTER (0));
@@ -903,14 +899,14 @@ GtkWidget* build_kalu_menu () {
     gtk_widget_show (item);
     gtk_menu_attach (GTK_MENU (menu), item, 0, 1, pos, pos + 1); ++pos;
 
-    item = donna_image_menu_item_new_with_label (
+    item = gtk_image_menu_item_new_with_label (
             _c("systray-menu", "Manage watched packages..."));
     g_signal_connect (G_OBJECT (item), "activate",
             G_CALLBACK (menu_manage_cb), (gpointer) FALSE);
     gtk_widget_show (item);
     gtk_menu_attach (GTK_MENU (menu), item, 0, 1, pos, pos + 1); ++pos;
 
-    item = donna_image_menu_item_new_with_label (
+    item = gtk_image_menu_item_new_with_label (
             _c("systray-menu", "Manage watched AUR packages..."));
     g_signal_connect (G_OBJECT (item), "activate",
             G_CALLBACK (menu_manage_cb), (gpointer) TRUE);
@@ -921,10 +917,10 @@ GtkWidget* build_kalu_menu () {
     gtk_widget_show (item);
     gtk_menu_attach (GTK_MENU (menu), item, 0, 1, pos, pos + 1); ++pos;
 
-    item = donna_image_menu_item_new_with_label (
+    item = gtk_image_menu_item_new_with_label (
             _c("systray-menu", "Preferences"));
     image = gtk_image_new_from_icon_name ("preferences-desktop", GTK_ICON_SIZE_MENU);
-    donna_image_menu_item_set_image (DONNA_IMAGE_MENU_ITEM (item), image);
+    gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), image);
     gtk_widget_set_tooltip_text (item, _("Edit preferences"));
     g_signal_connect (G_OBJECT (item), "activate",
             G_CALLBACK (menu_prefs_cb), NULL);
@@ -935,17 +931,17 @@ GtkWidget* build_kalu_menu () {
     gtk_widget_show (item);
     gtk_menu_attach (GTK_MENU (menu), item, 0, 1, pos, pos + 1); ++pos;
 
-    item = donna_image_menu_item_new_with_label (
+    item = gtk_image_menu_item_new_with_label (
             _c("systray-menu", "Help"));
     image = gtk_image_new_from_icon_name ("help-contents", GTK_ICON_SIZE_MENU);
-    donna_image_menu_item_set_image (DONNA_IMAGE_MENU_ITEM (item), image);
+    gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), image);
     gtk_widget_set_tooltip_text (item, _("Show help (man page)"));
     g_signal_connect (G_OBJECT (item), "activate",
             G_CALLBACK (menu_help_cb), NULL);
     gtk_widget_show (item);
     gtk_menu_attach (GTK_MENU (menu), item, 0, 1, pos, pos + 1); ++pos;
 
-    item = donna_image_menu_item_new_with_label (
+    item = gtk_image_menu_item_new_with_label (
             _c("systray-menu", "Change log"));
     gtk_widget_set_tooltip_text (item, _("Show change log"));
     g_signal_connect (G_OBJECT (item), "activate",
@@ -953,10 +949,10 @@ GtkWidget* build_kalu_menu () {
     gtk_widget_show (item);
     gtk_menu_attach (GTK_MENU (menu), item, 0, 1, pos, pos + 1); ++pos;
 
-    item = donna_image_menu_item_new_with_label (
+    item = gtk_image_menu_item_new_with_label (
             _c("systray-menu", "About"));
     image = gtk_image_new_from_icon_name ("help-about", GTK_ICON_SIZE_MENU);
-    donna_image_menu_item_set_image (DONNA_IMAGE_MENU_ITEM (item), image);
+    gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), image);
     gtk_widget_set_tooltip_text (item,
             _("Show Copyright & version information"));
     g_signal_connect (G_OBJECT (item), "activate",
@@ -968,10 +964,10 @@ GtkWidget* build_kalu_menu () {
     gtk_widget_show (item);
     gtk_menu_attach (GTK_MENU (menu), item, 0, 1, pos, pos + 1); ++pos;
 
-    item = donna_image_menu_item_new_with_label (
+    item = gtk_image_menu_item_new_with_label (
             _c("systray-menu", "Quit"));
     image = gtk_image_new_from_icon_name ("application-exit", GTK_ICON_SIZE_MENU);
-    donna_image_menu_item_set_image (DONNA_IMAGE_MENU_ITEM (item), image);
+    gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), image);
     gtk_widget_set_sensitive (item, !kalpm_state.is_busy);
     gtk_widget_set_tooltip_text (item, _("Exit kalu"));
     g_signal_connect (G_OBJECT (item), "activate",
@@ -1169,9 +1165,6 @@ icon_press_cb (GtkStatusIcon *icon _UNUSED_, GdkEventButton *event, gpointer dat
     return FALSE;
 }
 
-#ifdef ENABLE_STATUS_NOTIFIER
-AppIndicator *sn = NULL;
-#endif
 GtkStatusIcon *icon = NULL;
 
 
@@ -1358,15 +1351,20 @@ icon_query_tooltip_cb (GtkWidget *_icon _UNUSED_, gint x _UNUSED_, gint y _UNUSE
     return TRUE;
 }
 
+
+#ifdef ENABLE_STATUS_NOTIFIER
+const char * currIcon = "kalu-paused";
+GDBusConnection *sni_conn = NULL;
+DbusmenuServer* sni_menu_srv = NULL;
+#endif
+
 static gboolean
 set_status_icon (gboolean active)
 {
     if (active)
     {
 #ifdef ENABLE_STATUS_NOTIFIER
-        if (sn) {
-          app_indicator_set_icon_full(sn, (kalpm_state.is_paused)?"kalu-paused":"kalu", "kalu");
-        }
+        currIcon = (kalpm_state.is_paused)?"kalu-paused":"kalu";
 
         /* in case both are set (i.e. sn is e.g. waiting for a host, while we
          * use icon as fallback */
@@ -1383,9 +1381,7 @@ set_status_icon (gboolean active)
     else
     {
 #ifdef ENABLE_STATUS_NOTIFIER
-        if (sn) {
-          app_indicator_set_icon_full(sn, (kalpm_state.is_paused)?"kalu-gray-paused":"kalu-gray", "kalu");
-        }
+        currIcon = (kalpm_state.is_paused)?"kalu-gray-paused":"kalu-gray";
         if (icon)
 #endif
         {
@@ -1398,13 +1394,144 @@ set_status_icon (gboolean active)
     }
 
 #ifdef ENABLE_STATUS_NOTIFIER
-    GtkWidget *menu = build_kalu_menu();
-    app_indicator_set_menu(sn, GTK_MENU(menu));
-    app_indicator_set_status(sn, APP_INDICATOR_STATUS_ACTIVE);
+    GVariantBuilder changed_builder;
+    GVariantBuilder invalid_builder;
+
+    g_variant_builder_init(&changed_builder, G_VARIANT_TYPE("a{sv}"));
+    g_variant_builder_add(&changed_builder, "{sv}", "IconName", g_variant_new_string(currIcon));
+    g_variant_builder_add(&changed_builder, "{sv}", "Status", g_variant_new_string(active?"Active":"Passive"));
+
+    g_variant_builder_init(&invalid_builder, G_VARIANT_TYPE("as"));
+    g_variant_builder_add(&invalid_builder, "s", "ToolTip");
+
+    g_dbus_connection_emit_signal(sni_conn, NULL, "/StatusNotifierItem", "org.freedesktop.DBus.Properties", "PropertiesChanged", g_variant_new("(sa{sv}as)", "org.kde.StatusNotifierItem", &changed_builder, &invalid_builder), NULL);
+
+    g_dbus_connection_emit_signal(sni_conn, NULL, "/StatusNotifierItem", "org.kde.StatusNotifierItem", "NewIcon", NULL, NULL);
+    g_dbus_connection_emit_signal(sni_conn, NULL, "/StatusNotifierItem", "org.kde.StatusNotifierItem", "NewToolTip", NULL, NULL);
+    g_dbus_connection_emit_signal(sni_conn, NULL, "/StatusNotifierItem", "org.kde.StatusNotifierItem", "NewStatus", g_variant_new("(s)", active?"Active":"Passive"), NULL);
+
+    DbusmenuMenuitem* root = dbusmenu_gtk_parse_menu_structure(GTK_WIDGET(build_kalu_menu()));
+    dbusmenu_server_set_root(sni_menu_srv, root);
 #endif
+
     /* do NOT get called back */
     return FALSE;
 }
+
+
+#ifdef ENABLE_STATUS_NOTIFIER
+void sni_setup(){
+  debug("create SNI icon");
+
+  sni_conn = g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, NULL);
+  const gchar *sni_introspection_xml =
+      "<node>"
+      "  <interface name='org.kde.StatusNotifierItem'>"
+      "    <method name='Activate'><arg type='i' name='x'/><arg type='i' name='y'/></method>"
+      "    <method name='SecondaryActivate'><arg type='i' name='x'/><arg type='i' name='y'/></method>"
+      //"    <method name='ContextMenu'><arg type='i' name='x'/><arg type='i' name='y'/></method>"
+      "    <method name='Scroll'><arg type='i' name='delta'/><arg type='s' name='orientation'/></method>"
+      "    <property name='Id' type='s' access='read'/>"
+      "    <property name='Status' type='s' access='read'/>"
+      "    <property name='Category' type='s' access='read'/>"
+      "    <property name='IconName' type='s' access='read'/>"
+      "    <property name='ItemIsMenu' type='b' access='read'/>"
+      "    <property name='ToolTip' type='(sa(iiay)ss)' access='read'/>"
+      "    <property name='Menu' type='o' access='read'/>"
+      "  </interface>"
+      "</node>";
+  GDBusNodeInfo *introspection_data = g_dbus_node_info_new_for_xml(sni_introspection_xml, NULL);
+
+  static const GDBusInterfaceVTable vtable = {sni_call, sni_property, NULL};
+  g_dbus_connection_register_object(sni_conn, "/StatusNotifierItem", introspection_data->interfaces[0], &vtable, NULL, NULL, NULL);
+
+  g_dbus_connection_call(
+      sni_conn, "org.kde.StatusNotifierWatcher", "/StatusNotifierWatcher",
+      "org.kde.StatusNotifierWatcher", "RegisterStatusNotifierItem",
+      g_variant_new("(s)", "/StatusNotifierItem"), NULL,
+      G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL, NULL);
+
+  sni_menu_srv = dbusmenu_server_new("/org/kalu/menu");
+  DbusmenuMenuitem* root = dbusmenu_gtk_parse_menu_structure(GTK_WIDGET(build_kalu_menu()));
+  dbusmenu_server_set_root(sni_menu_srv, root);
+}
+
+void sni_call(GDBusConnection* conn, const gchar* sender,
+                               const gchar* object_path, const gchar* interface_name,
+                               const gchar* method_name, GVariant* parameters,
+                               GDBusMethodInvocation* invocation, gpointer user_data) {
+
+    if (g_strcmp0(method_name, "Activate") == 0) {
+      debug("Icon: left click");
+
+
+      if (icon_press_timeout == 0)
+      {
+          guint delay;
+
+          g_object_get (gtk_settings_get_default (),
+                  "gtk-double-click-time",    &delay,
+                  NULL);
+          icon_press_timeout = g_timeout_add (delay, icon_press_click, NULL);
+      } else {
+        g_source_remove(icon_press_timeout);
+        icon_press_timeout = 0;
+        // double click
+        debug("Icon: left click -> double click");
+        process_click_action((kalpm_state.is_paused &&
+                              config->on_dbl_click_paused != DO_SAME_AS_ACTIVE)
+                                 ? config->on_dbl_click_paused
+                                 : config->on_dbl_click);
+      }
+
+
+    } else if (g_strcmp0(method_name, "SecondaryActivate") == 0) {
+      debug("Icon: middle click");
+        process_click_action ((kalpm_state.is_paused
+                    && config->on_mdl_click_paused != DO_SAME_AS_ACTIVE)
+                ? config->on_mdl_click_paused
+                : config->on_mdl_click);
+    } else if (g_strcmp0(method_name, "ContextMenu") == 0) {
+      debug("Icon: right click - should never happen");
+      //icon_popup_cb(NULL, 1, gtk_get_current_event_time(), NULL);
+    }
+
+    g_dbus_method_invocation_return_value(invocation, NULL);
+}
+
+// Map the properties (Icon name, etc.)
+GVariant* sni_property(GDBusConnection* conn, const gchar* sender,
+                                     const gchar* object_path, const gchar* interface_name,
+                                     const gchar* property_name, GError** error, gpointer user_data) {
+    if (g_strcmp0(property_name, "IconName") == 0) return g_variant_new_string(currIcon);
+    if (g_strcmp0(property_name, "Status") == 0)   return g_variant_new_string("Active");
+    if (g_strcmp0(property_name, "Id") == 0)       return g_variant_new_string("kalu");
+    if (g_strcmp0(property_name, "Category") == 0) return g_variant_new_string("ApplicationStatus");
+    if (g_strcmp0(property_name, "ItemIsMenu") == 0) return g_variant_new_boolean(FALSE);
+    if (g_strcmp0(property_name, "Menu") == 0) return g_variant_new_object_path("/org/kalu/menu");
+    if (g_strcmp0(property_name, "ToolTip") == 0) {
+      // Constructing the (sa(iiay)ss) structure
+      GVariantBuilder *builder = g_variant_builder_new(G_VARIANT_TYPE("a(iiay)"));
+      // We leave the icon data empty
+      GVariant *icon_data = g_variant_builder_end(builder);
+      g_variant_builder_unref(builder);
+      gchar buf_b[512], buf_t[512];
+      gint max = 512;
+      make_tooltip (buf_t, &max, TT_TITLE);
+      max = 512;
+      make_tooltip (buf_b, &max, TT_BODY);
+      return g_variant_new("(s@a(iiay)ss)",
+                           currIcon,              // Icon name
+                           icon_data,             // Icon data
+                           buf_t,              // Tooltip Title
+                           buf_b); // Tooltip Body
+
+    }
+
+    return NULL;
+}
+
+#endif
 
 void
 set_kalpm_nb (check_t type, gint nb, gboolean do_update_icon)
@@ -1467,18 +1594,6 @@ switch_status_icon (void)
     /* keep timeout alive */
     return TRUE;
 }
-
-#ifdef ENABLE_STATUS_NOTIFIER
-static void 
-sn_refresh_tooltip (void)
-{
-    if (!sn) return;
-    gchar buf[512];
-    gint max = 512;
-    make_tooltip (buf, &max, TT_FULL);
-    app_indicator_set_title(sn, buf);
-}
-#endif
 
 void
 set_kalpm_busy (gboolean busy)
@@ -1545,9 +1660,6 @@ set_kalpm_busy (gboolean busy)
         }
     }
 
-#ifdef ENABLE_STATUS_NOTIFIER
-    sn_refresh_tooltip ();
-#endif
 }
 
 void

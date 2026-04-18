@@ -74,6 +74,19 @@ gboolean is_pacman_conflicting (alpm_list_t *packages);
 void kalu_check (gboolean is_auto);
 gboolean kalu_auto_check (void);
 
+#ifdef ENABLE_STATUS_NOTIFIER
+void sni_setup();
+void sni_call(GDBusConnection *conn, const gchar *sender,
+                     const gchar *object_path, const gchar *interface_name,
+                     const gchar *method_name, GVariant *parameters,
+                     GDBusMethodInvocation *invocation, gpointer user_data);
+GVariant *sni_property(GDBusConnection *conn, const gchar *sender,
+                              const gchar *object_path,
+                              const gchar *interface_name,
+                              const gchar *property_name, GError **error,
+                              gpointer user_data);
+#endif
+
 void icon_popup_cb (GtkStatusIcon *_icon, guint button, guint activate_time,
                gpointer data);
 GtkWidget* build_kalu_menu ();

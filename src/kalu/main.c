@@ -43,11 +43,6 @@
 /* curl */
 #include <curl/curl.h>
 
-/* statusnotifier */
-#ifdef ENABLE_STATUS_NOTIFIER
-#include <libayatana-appindicator/app-indicator.h>
-#endif
-
 /* kalu */
 #include "kalu.h"
 #ifndef DISABLE_GUI
@@ -961,9 +956,6 @@ debug (const char *fmt, ...)
 }
 
 #ifndef DISABLE_GUI
-#ifdef ENABLE_STATUS_NOTIFIER
-extern AppIndicator *sn;
-#endif
 extern GtkStatusIcon *icon;
 extern GPtrArray     *open_windows;
 
@@ -1192,6 +1184,9 @@ opt_debug (const gchar  *option _UNUSED_,
 static void
 create_status_icon (void)
 {
+#ifdef ENABLE_STATUS_NOTIFIER
+    sni_setup();
+#else
     G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     debug ("create GtkStatusIcon");
     icon = gtk_status_icon_new_from_icon_name ("kalu-gray");
@@ -1208,6 +1203,7 @@ create_status_icon (void)
 
     gtk_status_icon_set_visible (icon, TRUE);
     G_GNUC_END_IGNORE_DEPRECATIONS
+#endif
 }
 #endif
 
@@ -1224,7 +1220,7 @@ sig_handler (int sig)
     }
 
 #ifndef DISABLE_GUI
-    if (sig == SIGTERM && !kalpm_state.is_busy)
+    if ((sig == SIGINT || sig == SIGTERM) && !kalpm_state.is_busy)
     {
         debug ("Exiting...");
         gtk_main_quit ();
@@ -1573,19 +1569,8 @@ main (int argc, char *argv[])
         g_object_unref (pixbuf_kalu);
     }
 
-#ifdef ENABLE_STATUS_NOTIFIER
-    debug("create AppIndicator (StatusNotifierItem)");
-
-    sn = app_indicator_new("kalu", "kalu", APP_INDICATOR_CATEGORY_APPLICATION_STATUS);
-    app_indicator_set_title(sn, "kalu - Keep Arch Linux Up-to-date");
-    GtkWidget *menu = build_kalu_menu();
-    app_indicator_set_menu(sn, GTK_MENU(menu));
-    app_indicator_set_status(sn, APP_INDICATOR_STATUS_ACTIVE);
-
-#else
     /* create systray icon */
     create_status_icon();
-#endif
 
     /* takes care of setting timeout_skip (if needed) and also triggers the
      * auto-checks (unless within skip period).

@@ -132,17 +132,17 @@ AS_IF([test "x$with_gui" = "xyes"], [
     PKG_CHECK_MODULES(GTK, [gtk+-3.0], , AC_MSG_ERROR([GTK+3 is required]))
 
     AS_IF([test "x$with_status_notifier" = "xyes"], [
-      PKG_CHECK_MODULES(STATUS_NOTIFIER, [ayatana-appindicator3-0.1], [
+      PKG_CHECK_MODULES(DBUSMENU, [dbusmenu-gtk3-0.4], [
         AC_DEFINE([ENABLE_STATUS_NOTIFIER], 1, [Enable StatusNotifierItem via Ayatana AppIndicator])
       ], [
-        AC_MSG_ERROR([ayatana-appindicator3-0.1 is required for StatusNotifierItem support])
+        AC_MSG_ERROR([dbusmenu-gtk3-0.4 is required for StatusNotifierItem support])
       ])
     ])
 ], [
     AC_DEFINE([DISABLE_GUI], 1, [Disable GUI])
     AC_DEFINE([DISABLE_UPDATER], 1, [Disable kalu udpater])
     # No GTK, check for Glib
-    PKG_CHECK_MODULES(GLIB2, [glib-2.0 gobject-2.0 gthread-2.0], ,
+    PKG_CHECK_MODULES(GLIB2, [glib-2.0 gobject-2.0 gthread-2.0 gio-2.0], ,
                       AC_MSG_ERROR([glib2 is required]))
     AS_IF([test "x$with_status_notifier" = "xyes"], [
            AC_MSG_ERROR([StatusNotifierItem support requires GUI])
