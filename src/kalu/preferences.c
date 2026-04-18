@@ -2164,7 +2164,7 @@ show_prefs (void)
     gtk_label_set_markup (GTK_LABEL (label),
             _("Using KDE's StatusNotifierItem interface, the action on click "
                 "will be mapped to Activate, the action on middle click mapped "
-                "to SecondaryActivate, the action on double click is unused."));
+                "to SecondaryActivate, the action on double click is mapped to Activate triggering twice in quick succession."));
     gtk_grid_attach (GTK_GRID (grid), label, 0, top, 2, 1);
     gtk_widget_show (label);
 #endif
