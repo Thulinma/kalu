@@ -1172,15 +1172,17 @@ GtkStatusIcon *icon = NULL;
     len = snprintf (s, (size_t) *max, __VA_ARGS__); \
     *max -= len;                                    \
     s += len;                                       \
+    totLen += len;                                  \
 } while (0)
 enum {
     TT_FULL,
     TT_TITLE,
     TT_BODY
 };
-static void make_tooltip (gchar *s, gint *max, guint tt)
+static gint make_tooltip (gchar *s, gint *max, guint tt)
 {
     gint len;
+    gint totLen = 0;
 
     if (tt == TT_FULL || tt == TT_TITLE)
     {
@@ -1194,11 +1196,11 @@ static void make_tooltip (gchar *s, gint *max, guint tt)
         if (kalpm_state.is_busy)
         {
             addstr (_("Checking/updating in progress..."));
-            return;
+            return totLen;
         }
         else if (kalpm_state.last_check == NULL)
         {
-            return;
+            return totLen;
         }
     }
 
@@ -1209,7 +1211,7 @@ static void make_tooltip (gchar *s, gint *max, guint tt)
         s_date = g_date_time_format (kalpm_state.last_check, "%F %R");
         addstr (_("Last checked on %s"), s_date);
         g_free (s_date);
-        return;
+        return totLen;
     }
     else if (tt == TT_FULL)
     {
@@ -1331,6 +1333,7 @@ static void make_tooltip (gchar *s, gint *max, guint tt)
                     (long unsigned int) kalpm_state.nb_watched_aur),
                 kalpm_state.nb_watched_aur);
     }
+    return totLen;
 }
 #undef addstr
 
@@ -1517,9 +1520,11 @@ GVariant* sni_property(GDBusConnection* conn, const gchar* sender,
       g_variant_builder_unref(builder);
       gchar buf_b[512], buf_t[512];
       gint max = 512;
-      make_tooltip (buf_t, &max, TT_TITLE);
+      gint len = make_tooltip (buf_t, &max, TT_TITLE);
+      buf_t[len] = 0;
       max = 512;
-      make_tooltip (buf_b, &max, TT_BODY);
+      len = make_tooltip (buf_b, &max, TT_BODY);
+      buf_b[len] = 0;
       return g_variant_new("(s@a(iiay)ss)",
                            currIcon,              // Icon name
                            icon_data,             // Icon data
