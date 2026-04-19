@@ -76,6 +76,7 @@ gboolean kalu_auto_check (void);
 
 #ifdef ENABLE_STATUS_NOTIFIER
 void sni_setup();
+void sni_register();
 void sni_call(GDBusConnection *conn, const gchar *sender,
                      const gchar *object_path, const gchar *interface_name,
                      const gchar *method_name, GVariant *parameters,

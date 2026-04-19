@@ -41,6 +41,11 @@
 #include <libdbusmenu-glib/menuitem.h>
 #include <libdbusmenu-glib/server.h>
 #include <libdbusmenu-gtk/parser.h>
+
+const char * currIcon = "kalu-paused";
+GDBusConnection *sni_conn = NULL;
+DbusmenuServer* sni_menu_srv = NULL;
+bool currActive = true;
 #endif
 
 #ifndef DISABLE_UPDATER
@@ -62,7 +67,6 @@ static void menu_quit_cb (GtkMenuItem *item, gpointer data);
 static gboolean set_status_icon (gboolean active);
 
 extern kalpm_state_t kalpm_state;
-
 
 void
 free_notif (notif_t *notif)
@@ -563,6 +567,7 @@ update_icon (void)
                        + kalpm_state.nb_aur + + kalpm_state.nb_aur_not_found
                        + kalpm_state.nb_watched_aur + kalpm_state.nb_news > 0);
 
+    currActive = active;
     g_main_context_invoke (NULL,
                            (GSourceFunc) set_status_icon,
                            GINT_TO_POINTER (active));
@@ -1354,13 +1359,6 @@ icon_query_tooltip_cb (GtkWidget *_icon _UNUSED_, gint x _UNUSED_, gint y _UNUSE
     return TRUE;
 }
 
-
-#ifdef ENABLE_STATUS_NOTIFIER
-const char * currIcon = "kalu-paused";
-GDBusConnection *sni_conn = NULL;
-DbusmenuServer* sni_menu_srv = NULL;
-#endif
-
 static gboolean
 set_status_icon (gboolean active)
 {
@@ -1423,10 +1421,41 @@ set_status_icon (gboolean active)
 
 
 #ifdef ENABLE_STATUS_NOTIFIER
+
+static void on_watcher_signal(GDBusConnection *conn, const gchar *sender_name, const gchar *object_path, const gchar *interface_name, const gchar *signal_name, GVariant *parameters, gpointer user_data) {
+    if (g_strcmp0(signal_name, "StatusNotifierHostRegistered") == 0) {
+        debug("New StatusNotifierHost detected! Re-registering kalu...");
+        sni_register(); // Call your existing registration function
+    }
+}
+
+static void on_watcher_appeared(GDBusConnection *conn, const gchar *name,
+                                const gchar *name_owner, gpointer user_data) {
+  debug("StatusNotifierWatcher appeared at %s", name_owner);
+  sni_register();
+}
+
 void sni_setup(){
-  debug("create SNI icon");
+  debug("Setting up SNI");
 
   sni_conn = g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, NULL);
+
+  sni_register();
+
+  sni_menu_srv = dbusmenu_server_new("/org/kalu/menu");
+  DbusmenuMenuitem* root = dbusmenu_gtk_parse_menu_structure(GTK_WIDGET(build_kalu_menu()));
+  dbusmenu_server_set_root(sni_menu_srv, root);
+
+  g_dbus_connection_signal_subscribe(
+      sni_conn, "org.kde.StatusNotifierWatcher",
+      "org.freedesktop.DBus.Properties", NULL, "/StatusNotifierWatcher", NULL,
+      G_DBUS_SIGNAL_FLAGS_NONE, on_watcher_signal, NULL, NULL);
+  g_bus_watch_name(G_BUS_TYPE_SESSION, "org.kde.StatusNotifierWatcher",
+                   G_BUS_NAME_WATCHER_FLAGS_NONE, on_watcher_appeared, NULL,
+                   NULL, NULL);
+}
+
+void sni_register(){
   const gchar *sni_introspection_xml =
       "<node>"
       "  <interface name='org.kde.StatusNotifierItem'>"
@@ -1453,10 +1482,6 @@ void sni_setup(){
       "org.kde.StatusNotifierWatcher", "RegisterStatusNotifierItem",
       g_variant_new("(s)", "/StatusNotifierItem"), NULL,
       G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL, NULL);
-
-  sni_menu_srv = dbusmenu_server_new("/org/kalu/menu");
-  DbusmenuMenuitem* root = dbusmenu_gtk_parse_menu_structure(GTK_WIDGET(build_kalu_menu()));
-  dbusmenu_server_set_root(sni_menu_srv, root);
 }
 
 void sni_call(GDBusConnection* conn, const gchar* sender,
@@ -1507,7 +1532,7 @@ GVariant* sni_property(GDBusConnection* conn, const gchar* sender,
                                      const gchar* object_path, const gchar* interface_name,
                                      const gchar* property_name, GError** error, gpointer user_data) {
     if (g_strcmp0(property_name, "IconName") == 0) return g_variant_new_string(currIcon);
-    if (g_strcmp0(property_name, "Status") == 0) return g_variant_new_string(active ? "Active" : "Passive");
+    if (g_strcmp0(property_name, "Status") == 0) return g_variant_new_string(currActive ? "Active" : "Passive");
     if (g_strcmp0(property_name, "Id") == 0)       return g_variant_new_string("kalu");
     if (g_strcmp0(property_name, "Category") == 0) return g_variant_new_string("ApplicationStatus");
     if (g_strcmp0(property_name, "ItemIsMenu") == 0) return g_variant_new_boolean(FALSE);
