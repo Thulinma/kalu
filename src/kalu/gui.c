@@ -1507,7 +1507,7 @@ GVariant* sni_property(GDBusConnection* conn, const gchar* sender,
                                      const gchar* object_path, const gchar* interface_name,
                                      const gchar* property_name, GError** error, gpointer user_data) {
     if (g_strcmp0(property_name, "IconName") == 0) return g_variant_new_string(currIcon);
-    if (g_strcmp0(property_name, "Status") == 0)   return g_variant_new_string("Active");
+    if (g_strcmp0(property_name, "Status") == 0) return g_variant_new_string(active ? "Active" : "Passive");
     if (g_strcmp0(property_name, "Id") == 0)       return g_variant_new_string("kalu");
     if (g_strcmp0(property_name, "Category") == 0) return g_variant_new_string("ApplicationStatus");
     if (g_strcmp0(property_name, "ItemIsMenu") == 0) return g_variant_new_boolean(FALSE);
