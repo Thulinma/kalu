@@ -45,7 +45,7 @@
 const char * currIcon = "kalu-paused";
 GDBusConnection *sni_conn = NULL;
 DbusmenuServer* sni_menu_srv = NULL;
-bool currActive = true;
+bool currActive = false;
 #endif
 
 #ifndef DISABLE_UPDATER
@@ -568,6 +568,7 @@ update_icon (void)
                        + kalpm_state.nb_watched_aur + kalpm_state.nb_news > 0);
 
     currActive = active;
+    debug("State set to %s", currActive ? "active" : "passive");
     g_main_context_invoke (NULL,
                            (GSourceFunc) set_status_icon,
                            GINT_TO_POINTER (active));

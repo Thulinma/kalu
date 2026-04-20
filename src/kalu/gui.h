@@ -35,11 +35,6 @@
 /* notify */
 #include <libnotify/notify.h>
 
-/* statusnotifier */
-#ifdef ENABLE_STATUS_NOTIFIER
-#include <statusnotifier.h>
-#endif
-
 #define FREE_NOTIFS_LIST(p)                                                 \
             do                                                              \
             {                                                               \
