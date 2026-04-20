@@ -1401,7 +1401,7 @@ set_status_icon (gboolean active)
 
     g_variant_builder_init(&changed_builder, G_VARIANT_TYPE("a{sv}"));
     g_variant_builder_add(&changed_builder, "{sv}", "IconName", g_variant_new_string(currIcon));
-    g_variant_builder_add(&changed_builder, "{sv}", "Status", g_variant_new_string(active?"Active":"Passive"));
+    g_variant_builder_add(&changed_builder, "{sv}", "Status", g_variant_new_string(currActive?"Active":"Passive"));
 
     g_variant_builder_init(&invalid_builder, G_VARIANT_TYPE("as"));
     g_variant_builder_add(&invalid_builder, "s", "ToolTip");
