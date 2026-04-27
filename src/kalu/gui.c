@@ -36,7 +36,6 @@
 #include "kalu-updater.h"
 #include "updater.h"
 #endif
-#ifdef ENABLE_STATUS_NOTIFIER
 #include <gtk/gtk.h>
 #include <libdbusmenu-glib/menuitem.h>
 #include <libdbusmenu-glib/server.h>
@@ -46,7 +45,6 @@ const char * currIcon = "kalu-paused";
 GDBusConnection *sni_conn = NULL;
 DbusmenuServer* sni_menu_srv = NULL;
 bool currActive = false;
-#endif
 
 #ifndef DISABLE_UPDATER
 #define run_updater()   do {            \
@@ -777,6 +775,7 @@ abort_checks (void)
 }
 
 GtkWidget* build_kalu_menu () {
+    G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     GtkWidget   *menu;
     GtkWidget   *item;
     GtkWidget   *image;
@@ -981,6 +980,7 @@ GtkWidget* build_kalu_menu () {
     gtk_widget_show (item);
     gtk_menu_attach (GTK_MENU (menu), item, 0, 1, pos, pos + 1); ++pos;
 
+    G_GNUC_END_IGNORE_DEPRECATIONS
     return menu;
 }
 
@@ -995,7 +995,9 @@ icon_popup_cb (GtkStatusIcon *_icon _UNUSED_, guint button, guint activate_time,
     g_signal_connect (G_OBJECT (menu), "unmap-event",
             G_CALLBACK (menu_unmap_cb), NULL);
 
+    G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     gtk_menu_popup (GTK_MENU (menu), NULL, NULL, NULL, NULL, button, activate_time);
+    G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 void
@@ -1363,68 +1365,55 @@ icon_query_tooltip_cb (GtkWidget *_icon _UNUSED_, gint x _UNUSED_, gint y _UNUSE
 static gboolean
 set_status_icon (gboolean active)
 {
-    if (active)
-    {
-#ifdef ENABLE_STATUS_NOTIFIER
-        currIcon = (kalpm_state.is_paused)?"kalu-paused":"kalu";
-
-        /* in case both are set (i.e. sn is e.g. waiting for a host, while we
-         * use icon as fallback */
-        if (icon)
-#endif
-        {
-            G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-            gtk_status_icon_set_from_icon_name (icon, (kalpm_state.is_paused)
-                                                ? "kalu-paused"
-                                                : "kalu");
-            G_GNUC_END_IGNORE_DEPRECATIONS
-        }
-    }
-    else
-    {
-#ifdef ENABLE_STATUS_NOTIFIER
-        currIcon = (kalpm_state.is_paused)?"kalu-gray-paused":"kalu-gray";
-        if (icon)
-#endif
-        {
-            G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-            gtk_status_icon_set_from_icon_name (icon, (kalpm_state.is_paused)
-                                                ? "kalu-gray-paused"
-                                                : "kalu-gray");
-            G_GNUC_END_IGNORE_DEPRECATIONS
-        }
-    }
-
-#ifdef ENABLE_STATUS_NOTIFIER
+  if (active) {
+    currIcon = (kalpm_state.is_paused) ? "kalu-paused" : "kalu";
+  } else {
+    currIcon = (kalpm_state.is_paused) ? "kalu-gray-paused" : "kalu-gray";
+  }
+  if (icon) {
+    G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+    gtk_status_icon_set_from_icon_name(icon, currIcon);
+    G_GNUC_END_IGNORE_DEPRECATIONS
+  } else {
     GVariantBuilder changed_builder;
     GVariantBuilder invalid_builder;
 
     g_variant_builder_init(&changed_builder, G_VARIANT_TYPE("a{sv}"));
-    g_variant_builder_add(&changed_builder, "{sv}", "IconName", g_variant_new_string(currIcon));
-    g_variant_builder_add(&changed_builder, "{sv}", "Status", g_variant_new_string(currActive?"Active":"Passive"));
+    g_variant_builder_add(&changed_builder, "{sv}", "IconName",
+                          g_variant_new_string(currIcon));
+    g_variant_builder_add(
+        &changed_builder, "{sv}", "Status",
+        g_variant_new_string(currActive ? "Active" : "Passive"));
 
     g_variant_builder_init(&invalid_builder, G_VARIANT_TYPE("as"));
     g_variant_builder_add(&invalid_builder, "s", "ToolTip");
 
-    g_dbus_connection_emit_signal(sni_conn, NULL, "/StatusNotifierItem", "org.freedesktop.DBus.Properties", "PropertiesChanged", g_variant_new("(sa{sv}as)", "org.kde.StatusNotifierItem", &changed_builder, &invalid_builder), NULL);
+    g_dbus_connection_emit_signal(
+        sni_conn, NULL, "/StatusNotifierItem",
+        "org.freedesktop.DBus.Properties", "PropertiesChanged",
+        g_variant_new("(sa{sv}as)", "org.kde.StatusNotifierItem",
+                      &changed_builder, &invalid_builder),
+        NULL);
 
-    g_dbus_connection_emit_signal(sni_conn, NULL, "/StatusNotifierItem", "org.kde.StatusNotifierItem", "NewIcon", NULL, NULL);
-    g_dbus_connection_emit_signal(sni_conn, NULL, "/StatusNotifierItem", "org.kde.StatusNotifierItem", "NewToolTip", NULL, NULL);
-
-    DbusmenuMenuitem* root = dbusmenu_gtk_parse_menu_structure(GTK_WIDGET(build_kalu_menu()));
+    g_dbus_connection_emit_signal(sni_conn, NULL, "/StatusNotifierItem",
+                                  "org.kde.StatusNotifierItem", "NewIcon", NULL,
+                                  NULL);
+    g_dbus_connection_emit_signal(sni_conn, NULL, "/StatusNotifierItem",
+                                  "org.kde.StatusNotifierItem", "NewToolTip",
+                                  NULL, NULL);
     g_dbus_connection_emit_signal(
         sni_conn, NULL, "/StatusNotifierItem", "org.kde.StatusNotifierItem",
         "NewStatus", g_variant_new("(s)", currActive ? "Active" : "Passive"),
         NULL);
-    dbusmenu_server_set_root(sni_menu_srv, root);
-#endif
 
+    DbusmenuMenuitem *root =
+        dbusmenu_gtk_parse_menu_structure(GTK_WIDGET(build_kalu_menu()));
+    dbusmenu_server_set_root(sni_menu_srv, root);
+  }
     /* do NOT get called back */
     return FALSE;
 }
 
-
-#ifdef ENABLE_STATUS_NOTIFIER
 
 static void on_watcher_signal(GDBusConnection *conn, const gchar *sender_name, const gchar *object_path, const gchar *interface_name, const gchar *signal_name, GVariant *parameters, gpointer user_data) {
     if (g_strcmp0(signal_name, "StatusNotifierHostRegistered") == 0) {
@@ -1440,23 +1429,65 @@ static void on_watcher_appeared(GDBusConnection *conn, const gchar *name,
 }
 
 void sni_setup(){
-  debug("Setting up SNI");
+  debug("Checking for SNI...");
 
-  sni_conn = g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, NULL);
+  bool hasSNI = false;
+    sni_conn = g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, NULL);
+    if (sni_conn){
+      GVariant *result = g_dbus_connection_call_sync(
+          sni_conn, "org.freedesktop.DBus", "/org/freedesktop/DBus",
+          "org.freedesktop.DBus", "NameHasOwner",
+          g_variant_new("(s)", "org.kde.StatusNotifierWatcher"),
+          G_VARIANT_TYPE("(b)"), G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL);
 
-  sni_register();
+      gboolean has_owner = FALSE;
+      if (result) {
+        g_variant_get(result, "(b)", &has_owner);
+        g_variant_unref(result);
+      }
+      hasSNI = has_owner;
+      if (!hasSNI) {
+        g_object_unref(sni_conn);
+      }
+    }
 
-  sni_menu_srv = dbusmenu_server_new("/org/kalu/menu");
-  DbusmenuMenuitem* root = dbusmenu_gtk_parse_menu_structure(GTK_WIDGET(build_kalu_menu()));
-  dbusmenu_server_set_root(sni_menu_srv, root);
+    if (!hasSNI) {
+      // Setup xembed icon
+      G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+      debug("SNI support not detected; creating xembed tray icon");
+      icon = gtk_status_icon_new_from_icon_name("kalu-gray");
+      gtk_status_icon_set_name(icon, "kalu");
+      gtk_status_icon_set_title(icon, "kalu");
+      gtk_status_icon_set_tooltip_text(icon, "kalu");
 
-  g_dbus_connection_signal_subscribe(
-      sni_conn, "org.kde.StatusNotifierWatcher",
-      "org.freedesktop.DBus.Properties", NULL, "/StatusNotifierWatcher", NULL,
-      G_DBUS_SIGNAL_FLAGS_NONE, on_watcher_signal, NULL, NULL);
-  g_bus_watch_name(G_BUS_TYPE_SESSION, "org.kde.StatusNotifierWatcher",
-                   G_BUS_NAME_WATCHER_FLAGS_NONE, on_watcher_appeared, NULL,
-                   NULL, NULL);
+      g_signal_connect(G_OBJECT(icon), "query-tooltip",
+                       G_CALLBACK(icon_query_tooltip_cb), NULL);
+      g_signal_connect(G_OBJECT(icon), "popup-menu", G_CALLBACK(icon_popup_cb),
+                       NULL);
+      g_signal_connect(G_OBJECT(icon), "button-press-event",
+                       G_CALLBACK(icon_press_cb), NULL);
+
+      gtk_status_icon_set_visible(icon, TRUE);
+      G_GNUC_END_IGNORE_DEPRECATIONS
+    } else {
+      // Setup SNI icon
+      debug("SNI support detected: setting up SNI icon");
+
+      sni_register();
+
+      sni_menu_srv = dbusmenu_server_new("/org/kalu/menu");
+      DbusmenuMenuitem *root =
+          dbusmenu_gtk_parse_menu_structure(GTK_WIDGET(build_kalu_menu()));
+      dbusmenu_server_set_root(sni_menu_srv, root);
+
+      g_dbus_connection_signal_subscribe(
+          sni_conn, "org.kde.StatusNotifierWatcher",
+          "org.freedesktop.DBus.Properties", NULL, "/StatusNotifierWatcher",
+          NULL, G_DBUS_SIGNAL_FLAGS_NONE, on_watcher_signal, NULL, NULL);
+      g_bus_watch_name(G_BUS_TYPE_SESSION, "org.kde.StatusNotifierWatcher",
+                       G_BUS_NAME_WATCHER_FLAGS_NONE, on_watcher_appeared, NULL,
+                       NULL, NULL);
+    }
 }
 
 void sni_register(){
@@ -1564,8 +1595,6 @@ GVariant* sni_property(GDBusConnection* conn, const gchar* sender,
 
     return NULL;
 }
-
-#endif
 
 void
 set_kalpm_nb (check_t type, gint nb, gboolean do_update_icon)

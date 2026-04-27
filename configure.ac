@@ -47,21 +47,6 @@ AC_ARG_WITH([url-aur-prefix-pkg],
 		[set the prefix before each package for the AUR URL]),
 	[AUR_URL_PREFIX_PKG=$withval], [AUR_URL_PREFIX_PKG="&arg[[]]="])
 
-# Feature: KDE's StatusNotifierItem
-AC_ARG_ENABLE([status-notifier],
-	AC_HELP_STRING([--enable-status-notifier],
-		[enable support for KDE StatusNotifierItem]),
-	if test $enableval = "yes"; then
-		with_status_notifier=yes
-	elif test $enableval = "no"; then
-		with_status_notifier=no
-	else
-		AC_MSG_ERROR([Invalid value given to --enable-status-notifier; must be yes or no])
-	fi
-	,
-	with_status_notifier=no)
-AM_CONDITIONAL([ENABLE_STATUS_NOTIFIER], [test "x$with_status_notifier" = "xyes"])
-
 # Feature: GUI
 AC_ARG_ENABLE([gui],
 	AC_HELP_STRING([--disable-gui],
@@ -130,14 +115,7 @@ AS_IF([test "x$with_gui" = "xyes"], [
 
     # Checks for GTK+3
     PKG_CHECK_MODULES(GTK, [gtk+-3.0], , AC_MSG_ERROR([GTK+3 is required]))
-
-    AS_IF([test "x$with_status_notifier" = "xyes"], [
-      PKG_CHECK_MODULES(DBUSMENU, [dbusmenu-gtk3-0.4], [
-        AC_DEFINE([ENABLE_STATUS_NOTIFIER], 1, [Enable StatusNotifierItem via Ayatana AppIndicator])
-      ], [
-        AC_MSG_ERROR([dbusmenu-gtk3-0.4 is required for StatusNotifierItem support])
-      ])
-    ])
+    PKG_CHECK_MODULES(DBUSMENU, [dbusmenu-gtk3-0.4], , [ AC_MSG_ERROR([dbusmenu-gtk3-0.4 is required]) ])
 ], [
     AC_DEFINE([DISABLE_GUI], 1, [Disable GUI])
     AC_DEFINE([DISABLE_UPDATER], 1, [Disable kalu udpater])

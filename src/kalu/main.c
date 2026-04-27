@@ -1180,33 +1180,6 @@ opt_debug (const gchar  *option _UNUSED_,
     return TRUE;
 }
 
-#ifndef DISABLE_GUI
-static void
-create_status_icon (void)
-{
-#ifdef ENABLE_STATUS_NOTIFIER
-    sni_setup();
-#else
-    G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-    debug ("create GtkStatusIcon");
-    icon = gtk_status_icon_new_from_icon_name ("kalu-gray");
-    gtk_status_icon_set_name (icon, "kalu");
-    gtk_status_icon_set_title (icon, "kalu");
-    gtk_status_icon_set_tooltip_text (icon, "kalu");
-
-    g_signal_connect (G_OBJECT (icon), "query-tooltip",
-            G_CALLBACK (icon_query_tooltip_cb), NULL);
-    g_signal_connect (G_OBJECT (icon), "popup-menu",
-            G_CALLBACK (icon_popup_cb), NULL);
-    g_signal_connect (G_OBJECT (icon), "button-press-event",
-            G_CALLBACK (icon_press_cb), NULL);
-
-    gtk_status_icon_set_visible (icon, TRUE);
-    G_GNUC_END_IGNORE_DEPRECATIONS
-#endif
-}
-#endif
-
 static void
 sig_handler (int sig)
 {
@@ -1570,7 +1543,7 @@ main (int argc, char *argv[])
     }
 
     /* create systray icon */
-    create_status_icon();
+    sni_setup();
 
     /* takes care of setting timeout_skip (if needed) and also triggers the
      * auto-checks (unless within skip period).

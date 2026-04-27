@@ -93,10 +93,8 @@ kalu_CFLAGS += @GLIB2_CFLAGS@
 kalu_LDADD += @GLIB2_LIBS@
 endif
 
-if ENABLE_STATUS_NOTIFIER
 kalu_CFLAGS += @DBUSMENU_CFLAGS@
 kalu_LDADD += @DBUSMENU_LIBS@
-endif
 
 BUILT_SOURCES = \
 	src/logo.c

@@ -838,14 +838,6 @@ btn_save_cb (GtkButton *button _UNUSED_, gpointer data _UNUSED_)
     }
 #endif
 
-#ifdef ENABLE_STATUS_NOTIFIER
-    /* force icons for Statusnotifier (no GUI) */
-    if (new_config.sn_force_icons)
-    {
-        add_to_conf ("SnForceIcons = 1\n");
-    }
-#endif
-
     /* General */
     s = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (filechooser));
     if (NULL == s)
@@ -2154,20 +2146,6 @@ show_prefs (void)
     add_on_click_actions (&top, grid, CLICK_SGL, TRUE);
     add_on_click_actions (&top, grid, CLICK_DBL, TRUE);
     add_on_click_actions (&top, grid, CLICK_MDL, TRUE);
-
-#ifdef ENABLE_STATUS_NOTIFIER
-    ++top;
-    label = gtk_label_new (NULL);
-    gtk_widget_set_margin_top (label, 42);
-    gtk_label_set_max_width_chars (GTK_LABEL (label), 80);
-    gtk_label_set_line_wrap (GTK_LABEL (label), TRUE);
-    gtk_label_set_markup (GTK_LABEL (label),
-            _("Using KDE's StatusNotifierItem interface, the action on click "
-                "will be mapped to Activate, the action on middle click mapped "
-                "to SecondaryActivate, the action on double click is mapped to Activate triggering twice in quick succession."));
-    gtk_grid_attach (GTK_GRID (grid), label, 0, top, 2, 1);
-    gtk_widget_show (label);
-#endif
 
     /* add page */
     gtk_widget_show (grid);
