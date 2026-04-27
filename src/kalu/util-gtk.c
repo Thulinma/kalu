@@ -214,11 +214,11 @@ new_notification (const gchar *summary, const gchar *text)
         if (!pixbuf)
         {
             debug ("new notification: using kalu's icon");
-            pixbuf = gtk_icon_theme_load_icon (gtk_icon_theme_get_default (),
-                    "kalu", config->notif_icon_size, GTK_ICON_LOOKUP_FORCE_SIZE, NULL);
+            g_object_set(G_OBJECT(notification), "icon-name", "kalu", NULL);
+        }else{
+          notify_notification_set_image_from_pixbuf (notification, pixbuf);
+          g_object_unref (pixbuf);
         }
-        notify_notification_set_image_from_pixbuf (notification, pixbuf);
-        g_object_unref (pixbuf);
     }
     notify_notification_set_timeout (notification, config->timeout);
     return notification;
