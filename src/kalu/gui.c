@@ -1410,9 +1410,12 @@ set_status_icon (gboolean active)
 
     g_dbus_connection_emit_signal(sni_conn, NULL, "/StatusNotifierItem", "org.kde.StatusNotifierItem", "NewIcon", NULL, NULL);
     g_dbus_connection_emit_signal(sni_conn, NULL, "/StatusNotifierItem", "org.kde.StatusNotifierItem", "NewToolTip", NULL, NULL);
-    g_dbus_connection_emit_signal(sni_conn, NULL, "/StatusNotifierItem", "org.kde.StatusNotifierItem", "NewStatus", g_variant_new("(s)", active?"Active":"Passive"), NULL);
 
     DbusmenuMenuitem* root = dbusmenu_gtk_parse_menu_structure(GTK_WIDGET(build_kalu_menu()));
+    g_dbus_connection_emit_signal(
+        sni_conn, NULL, "/StatusNotifierItem", "org.kde.StatusNotifierItem",
+        "NewStatus", g_variant_new("(s)", currActive ? "Active" : "Passive"),
+        NULL);
     dbusmenu_server_set_root(sni_menu_srv, root);
 #endif
 
