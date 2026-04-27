@@ -1,3 +1,11 @@
+# 2026-04-18, v4.7.0
+
+- Fixed Active/Passive icon state not updating
+- Changed SNI icon implementation from ayatana-appindicator to using dbus and dbusmenu directly.
+
+This restores all click types in Wayland-based compositors, and even brought back the double-click support that had been missing from Wayland-based compositors since the start.
+
+
 # 2026-04-11, v4.6.0
 
 - Changed SNI icon implementation from jjacky's statusnotifier library to use ayatana-appindicator, instead
