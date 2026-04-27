@@ -1,3 +1,9 @@
+# 2026-04-18, v4.7.1
+
+- Fixed icon blinking in KDE/Plasma
+- Fixed notifications using a low quality image instead of the new high qualty SVG
+- Removed the --enable-status-notifier flag, now automatically detects SNI and uses an xembed fallback
+
 # 2026-04-18, v4.7.0
 
 - Fixed Active/Passive icon state not updating
